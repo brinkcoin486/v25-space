@@ -1,206 +1,114 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>V25 REAL CORE SPACE</title>
-
-<style>
-body{
-  margin:0;
-  background:#000;
-  color:#00ffcc;
-  font-family:monospace;
-}
-header{
-  padding:15px;
-  text-align:center;
-  font-size:20px;
-  border-bottom:1px solid #00ffcc;
-}
-#chat{
-  height:40vh;
-  overflow:auto;
-  padding:10px;
-}
-.msg{
-  margin:8px 0;
-  padding:8px;
-  border-left:3px solid #00ffcc;
-}
-.user{border-color:#ffe600}
-input,button{
-  padding:10px;
-  margin:5px;
-  border:none;
-}
-input{
-  width:70%;
-}
-button{
-  background:#00ffcc;
-}
-.section{
-  padding:10px;
-  border-top:1px solid #00ffcc;
-}
-img{
-  max-width:100%;
-}
-iframe{
-  width:100%;
-  height:300px;
-  border:none;
-}
-</style>
-</head>
-
-<body>
-
-<header>🚀 V25 REAL CORE – SPACE LIVE</header>
-
-<div id="chat"></div>
-
-<div>
-<input id="input" placeholder="Écris un message...">
-<button onclick="send()">SEND</button>
-<button onclick="loadNASA()">🌌 NASA</button>
-<button onclick="loadMars()">🛰 MARS</button>
-<button onclick="loadEarth()">🌍 EARTH</button>
-</div>
-
-<div class="section">
-<h3>📡 SATELLITE GOOGLE (clé requise)</h3>
-<input id="gkey" placeholder="Google Maps API KEY">
-<button onclick="loadGoogle()">ACTIVER</button>
-<div id="google"></div>
-</div>
-
-<div class="section">
-<h3>🌌 NASA DATA</h3>
-<div id="nasa"></div>
-</div>
-
-<script>
-
-function add(name,text,type="ia"){
-  const chat=document.getElementById("chat");
-  const div=document.createElement("div");
-  div.className="msg "+(type==="user"?"user":"");
-  div.innerHTML="<b>"+name+"</b> : "+text;
-  chat.appendChild(div);
-  chat.scrollTop=chat.scrollHeight;
-}
-
-function send(){
-  const val=document.getElementById("input").value;
-  if(!val)return;
-
-  add("USER",val,"user");
-
-  // Réponse simple immédiate
-  setTimeout(()=>{
-    add("IA","Analyse de : "+val);
-  },500);
-
-  document.getElementById("input").value="";
-}
-
-//////////////////////////////////////////////////
-// NASA APOD
-//////////////////////////////////////////////////
-
-async function loadNASA(){
-  add("SYSTEM","Connexion NASA...");
-
-  try{
-    const res=await fetch("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY");
-    const data=await res.json();
-
-    document.getElementById("nasa").innerHTML=
-      "<h4>"+data.title+"</h4>"+
-      "<img src='"+data.url+"'>"+
-      "<p>"+data.explanation.substring(0,200)+"...</p>";
-
-    add("NASA","OK → "+data.title);
-
-  }catch(e){
-    add("ERROR","NASA bloqué ou lent");
-  }
-}
-
-//////////////////////////////////////////////////
-// MARS
-//////////////////////////////////////////////////
-
-async function loadMars(){
-  add("SYSTEM","Connexion Mars...");
-
-  try{
-    const res=await fetch("https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?sol=1000&api_key=DEMO_KEY");
-    const data=await res.json();
-
-    if(data.photos.length>0){
-      document.getElementById("nasa").innerHTML=
-        "<img src='"+data.photos[0].img_src+"'>";
-      add("NASA","Photo Mars OK");
-    }else{
-      add("NASA","Pas d'image dispo");
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tchatroom d'IA entre IA</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0b1020;
+      color: #eaf1ff;
     }
 
-  }catch(e){
-    add("ERROR","Mars API erreur");
-  }
-}
+    .app {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      min-height: 100vh;
+    }
 
-//////////////////////////////////////////////////
-// EARTH EPIC
-//////////////////////////////////////////////////
+    .sidebar {
+      background: #121933;
+      border-right: 1px solid #27325f;
+      padding: 20px;
+    }
 
-async function loadEarth(){
-  add("SYSTEM","Connexion Terre...");
+    .sidebar h1 {
+      font-size: 22px;
+      margin: 0 0 16px;
+      color: #9fc2ff;
+    }
 
-  try{
-    const res=await fetch("https://api.nasa.gov/EPIC/api/natural/images?api_key=DEMO_KEY");
-    const data=await res.json();
+    .panel {
+      background: #182245;
+      border: 1px solid #2a3b75;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
 
-    const img=data[0];
-    const date=img.date.split(" ")[0].replace(/-/g,"/");
-    const url="https://epic.gsfc.nasa.gov/archive/natural/"+date+"/jpg/"+img.image+".jpg";
+    .panel h2 {
+      font-size: 15px;
+      margin: 0 0 10px;
+      color: #b6ceff;
+    }
 
-    document.getElementById("nasa").innerHTML="<img src='"+url+"'>";
-    add("NASA","Image Terre OK");
+    label {
+      display: block;
+      font-size: 13px;
+      margin: 10px 0 6px;
+      color: #cddcff;
+    }
 
-  }catch(e){
-    add("ERROR","EPIC API bloquée");
-  }
-}
+    input, textarea, button, select {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #3a4b88;
+      background: #0f1730;
+      color: #eef4ff;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
 
-//////////////////////////////////////////////////
-// GOOGLE SATELLITE
-//////////////////////////////////////////////////
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
 
-function loadGoogle(){
-  const key=document.getElementById("gkey").value;
+    button {
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+      margin-top: 8px;
+    }
 
-  if(!key){
-    add("SYSTEM","Ajoute une clé Google");
-    return;
-  }
+    button:hover { transform: translateY(-1px); }
+    .btn-primary { background: #3f6df6; }
+    .btn-danger { background: #b33b52; }
+    .btn-secondary { background: #2b3c74; }
 
-  document.getElementById("google").innerHTML=
-    '<iframe src="https://www.google.com/maps/embed/v1/view?key='+key+'&center=48.8566,2.3522&zoom=3&maptype=satellite"></iframe>';
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
 
-  add("GOOGLE","Satellite activé");
-}
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
 
-//////////////////////////////////////////////////
-// BOOT
-//////////////////////////////////////////////////
+    .topbar {
+      padding: 16px 20px;
+      background: #10172e;
+      border-bottom: 1px solid #27325f;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
-add("SYSTEM","V25 ONLINE – READY");
+    .status {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 14px;
+    }
 
-</script>
-
-</body>
-</html>
+    .badge {
+      padding
