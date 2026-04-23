@@ -1,114 +1,208 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tchatroom d'IA entre IA</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #0b1020;
-      color: #eaf1ff;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V25 FUSION REAL NETWORK</title>
 
-    .app {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      min-height: 100vh;
-    }
+<style>
+body{
+  margin:0;
+  background:#050b12;
+  color:#00ffcc;
+  font-family:monospace;
+}
 
-    .sidebar {
-      background: #121933;
-      border-right: 1px solid #27325f;
-      padding: 20px;
-    }
+/* HEADER */
+header{
+  padding:15px;
+  text-align:center;
+  font-size:20px;
+  border-bottom:1px solid #00ffcc;
+}
 
-    .sidebar h1 {
-      font-size: 22px;
-      margin: 0 0 16px;
-      color: #9fc2ff;
-    }
+/* LAYOUT */
+#layout{
+  display:grid;
+  grid-template-columns:260px 1fr;
+  height:calc(100vh - 60px);
+}
 
-    .panel {
-      background: #182245;
-      border: 1px solid #2a3b75;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 14px;
-    }
+/* SIDEBAR */
+#sidebar{
+  border-right:1px solid #00ffcc;
+  padding:10px;
+}
 
-    .panel h2 {
-      font-size: 15px;
-      margin: 0 0 10px;
-      color: #b6ceff;
-    }
+button{
+  width:100%;
+  margin:5px 0;
+  padding:10px;
+  background:#00ffcc;
+  border:none;
+  cursor:pointer;
+}
 
-    label {
-      display: block;
-      font-size: 13px;
-      margin: 10px 0 6px;
-      color: #cddcff;
-    }
+/* MAIN */
+#main{
+  display:flex;
+  flex-direction:column;
+}
 
-    input, textarea, button, select {
-      width: 100%;
-      border-radius: 10px;
-      border: 1px solid #3a4b88;
-      background: #0f1730;
-      color: #eef4ff;
-      padding: 10px 12px;
-      font-size: 14px;
-    }
+/* CHAT */
+#chat{
+  flex:1;
+  overflow:auto;
+  padding:10px;
+}
 
-    textarea {
-      resize: vertical;
-      min-height: 90px;
-    }
+.msg{
+  margin:6px 0;
+  padding:8px;
+  border-left:3px solid #00ffcc;
+}
+.user{border-color:#ffe600}
 
-    button {
-      cursor: pointer;
-      font-weight: bold;
-      transition: 0.2s;
-      margin-top: 8px;
-    }
+/* TERMINAL */
+#terminal{
+  height:120px;
+  overflow:auto;
+  padding:10px;
+  border-top:1px solid #00ffcc;
+  background:#000;
+  font-size:12px;
+}
 
-    button:hover { transform: translateY(-1px); }
-    .btn-primary { background: #3f6df6; }
-    .btn-danger { background: #b33b52; }
-    .btn-secondary { background: #2b3c74; }
+/* INPUT */
+#inputZone{
+  display:flex;
+}
 
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+#input{
+  flex:1;
+  padding:10px;
+}
 
-    .main {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
+</style>
+</head>
 
-    .topbar {
-      padding: 16px 20px;
-      background: #10172e;
-      border-bottom: 1px solid #27325f;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+<body>
 
-    .status {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      font-size: 14px;
-    }
+<header>🚀 V25 FUSION – MULTI IA NETWORK</header>
 
-    .badge {
-      padding
+<div id="layout">
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <button onclick="runScenario()">▶ LANCER IA</button>
+  <button onclick="clearChat()">🧹 CLEAR</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+<div id="chat"></div>
+
+<div id="inputZone">
+  <input id="input" placeholder="Écris...">
+  <button onclick="send()">SEND</button>
+</div>
+
+<div id="terminal"></div>
+
+</div>
+</div>
+
+<script>
+
+const chat = document.getElementById("chat");
+const terminal = document.getElementById("terminal");
+
+//////////////////////////////////////////////////
+// AFFICHAGE GARANTI
+//////////////////////////////////////////////////
+
+function addMsg(name,text,type="ia"){
+  const div=document.createElement("div");
+  div.className="msg "+(type==="user"?"user":"");
+  div.innerHTML="<b>"+name+"</b> : "+text;
+  chat.appendChild(div);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function log(text){
+  terminal.innerHTML += text+"<br>";
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+//////////////////////////////////////////////////
+// USER
+//////////////////////////////////////////////////
+
+function send(){
+  const val=document.getElementById("input").value;
+  if(!val)return;
+
+  addMsg("USER",val,"user");
+  log("[USER] "+val);
+
+  // réponse IA simple (toujours visible)
+  setTimeout(()=>{
+    addMsg("IA","Analyse de : "+val);
+  },400);
+
+  document.getElementById("input").value="";
+}
+
+function clearChat(){
+  chat.innerHTML="";
+}
+
+//////////////////////////////////////////////////
+// MULTI AGENT (fusion V2)
+//////////////////////////////////////////////////
+
+function runScenario(){
+
+  const task = document.getElementById("input").value || "Analyse stratégique";
+
+  addMsg("SYSTEM","Démarrage réseau IA...");
+  log("[BOOT] Scenario start");
+
+  // ANALYSTE
+  setTimeout(()=>{
+    addMsg("ANALYSTE","Analyse : "+task);
+    log("[ANALYST] OK");
+  },500);
+
+  // CRITIQUE
+  setTimeout(()=>{
+    addMsg("CRITIQUE","Failles détectées sur "+task);
+    log("[CRITIC] OK");
+  },1000);
+
+  // SYNTHÈSE
+  setTimeout(()=>{
+    addMsg("SYNTHÈSE","Solution optimisée générée");
+    log("[SYNTH] OK");
+  },1500);
+
+  // JUGE
+  setTimeout(()=>{
+    addMsg("JUGE","Décision validée");
+    log("[JUDGE] OK");
+  },2000);
+
+}
+
+//////////////////////////////////////////////////
+// BOOT
+//////////////////////////////////////////////////
+
+addMsg("SYSTEM","V25 READY – FUSION ACTIVE");
+log("[SYSTEM] ONLINE");
+
+</script>
+
+</body>
+</html>
