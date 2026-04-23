@@ -70,7 +70,7 @@ iframe{
 </div>
 
 <div class="section">
-<h3>📡 SATELLITE GOOGLE (mettre ta clé)</h3>
+<h3>📡 SATELLITE GOOGLE (clé requise)</h3>
 <input id="gkey" placeholder="Google Maps API KEY">
 <button onclick="loadGoogle()">ACTIVER</button>
 <div id="google"></div>
@@ -95,7 +95,14 @@ function add(name,text,type="ia"){
 function send(){
   const val=document.getElementById("input").value;
   if(!val)return;
+
   add("USER",val,"user");
+
+  // Réponse simple immédiate
+  setTimeout(()=>{
+    add("IA","Analyse de : "+val);
+  },500);
+
   document.getElementById("input").value="";
 }
 
@@ -104,16 +111,22 @@ function send(){
 //////////////////////////////////////////////////
 
 async function loadNASA(){
-  add("SYSTEM","Chargement NASA...");
-  const res=await fetch("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY");
-  const data=await res.json();
+  add("SYSTEM","Connexion NASA...");
 
-  document.getElementById("nasa").innerHTML=
-    "<h4>"+data.title+"</h4>"+
-    "<img src='"+data.url+"'>"+
-    "<p>"+data.explanation+"</p>";
+  try{
+    const res=await fetch("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY");
+    const data=await res.json();
 
-  add("NASA","Image du jour chargée");
+    document.getElementById("nasa").innerHTML=
+      "<h4>"+data.title+"</h4>"+
+      "<img src='"+data.url+"'>"+
+      "<p>"+data.explanation.substring(0,200)+"...</p>";
+
+    add("NASA","OK → "+data.title);
+
+  }catch(e){
+    add("ERROR","NASA bloqué ou lent");
+  }
 }
 
 //////////////////////////////////////////////////
@@ -121,16 +134,22 @@ async function loadNASA(){
 //////////////////////////////////////////////////
 
 async function loadMars(){
-  add("SYSTEM","Chargement Mars...");
-  const res=await fetch("https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?sol=1000&api_key=DEMO_KEY");
-  const data=await res.json();
+  add("SYSTEM","Connexion Mars...");
 
-  if(data.photos.length>0){
-    document.getElementById("nasa").innerHTML=
-      "<img src='"+data.photos[0].img_src+"'>";
-    add("NASA","Photo Mars chargée");
-  } else {
-    add("NASA","Aucune image trouvée");
+  try{
+    const res=await fetch("https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?sol=1000&api_key=DEMO_KEY");
+    const data=await res.json();
+
+    if(data.photos.length>0){
+      document.getElementById("nasa").innerHTML=
+        "<img src='"+data.photos[0].img_src+"'>";
+      add("NASA","Photo Mars OK");
+    }else{
+      add("NASA","Pas d'image dispo");
+    }
+
+  }catch(e){
+    add("ERROR","Mars API erreur");
   }
 }
 
@@ -139,16 +158,22 @@ async function loadMars(){
 //////////////////////////////////////////////////
 
 async function loadEarth(){
-  add("SYSTEM","Chargement Terre...");
-  const res=await fetch("https://api.nasa.gov/EPIC/api/natural/images?api_key=DEMO_KEY");
-  const data=await res.json();
+  add("SYSTEM","Connexion Terre...");
 
-  const img=data[0];
-  const date=img.date.split(" ")[0].replace(/-/g,"/");
-  const url="https://epic.gsfc.nasa.gov/archive/natural/"+date+"/jpg/"+img.image+".jpg";
+  try{
+    const res=await fetch("https://api.nasa.gov/EPIC/api/natural/images?api_key=DEMO_KEY");
+    const data=await res.json();
 
-  document.getElementById("nasa").innerHTML="<img src='"+url+"'>";
-  add("NASA","Image Terre chargée");
+    const img=data[0];
+    const date=img.date.split(" ")[0].replace(/-/g,"/");
+    const url="https://epic.gsfc.nasa.gov/archive/natural/"+date+"/jpg/"+img.image+".jpg";
+
+    document.getElementById("nasa").innerHTML="<img src='"+url+"'>";
+    add("NASA","Image Terre OK");
+
+  }catch(e){
+    add("ERROR","EPIC API bloquée");
+  }
 }
 
 //////////////////////////////////////////////////
@@ -157,6 +182,7 @@ async function loadEarth(){
 
 function loadGoogle(){
   const key=document.getElementById("gkey").value;
+
   if(!key){
     add("SYSTEM","Ajoute une clé Google");
     return;
@@ -172,7 +198,7 @@ function loadGoogle(){
 // BOOT
 //////////////////////////////////////////////////
 
-add("SYSTEM","V25 READY – APIs RÉELLES ACTIVES");
+add("SYSTEM","V25 ONLINE – READY");
 
 </script>
 
