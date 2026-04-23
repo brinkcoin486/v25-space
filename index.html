@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V25 REAL CORE SPACE</title>
+
+<style>
+body{
+  margin:0;
+  background:#000;
+  color:#00ffcc;
+  font-family:monospace;
+}
+header{
+  padding:15px;
+  text-align:center;
+  font-size:20px;
+  border-bottom:1px solid #00ffcc;
+}
+#chat{
+  height:40vh;
+  overflow:auto;
+  padding:10px;
+}
+.msg{
+  margin:8px 0;
+  padding:8px;
+  border-left:3px solid #00ffcc;
+}
+.user{border-color:#ffe600}
+input,button{
+  padding:10px;
+  margin:5px;
+  border:none;
+}
+input{
+  width:70%;
+}
+button{
+  background:#00ffcc;
+}
+.section{
+  padding:10px;
+  border-top:1px solid #00ffcc;
+}
+img{
+  max-width:100%;
+}
+iframe{
+  width:100%;
+  height:300px;
+  border:none;
+}
+</style>
+</head>
+
+<body>
+
+<header>🚀 V25 REAL CORE – SPACE LIVE</header>
+
+<div id="chat"></div>
+
+<div>
+<input id="input" placeholder="Écris un message...">
+<button onclick="send()">SEND</button>
+<button onclick="loadNASA()">🌌 NASA</button>
+<button onclick="loadMars()">🛰 MARS</button>
+<button onclick="loadEarth()">🌍 EARTH</button>
+</div>
+
+<div class="section">
+<h3>📡 SATELLITE GOOGLE (mettre ta clé)</h3>
+<input id="gkey" placeholder="Google Maps API KEY">
+<button onclick="loadGoogle()">ACTIVER</button>
+<div id="google"></div>
+</div>
+
+<div class="section">
+<h3>🌌 NASA DATA</h3>
+<div id="nasa"></div>
+</div>
+
+<script>
+
+function add(name,text,type="ia"){
+  const chat=document.getElementById("chat");
+  const div=document.createElement("div");
+  div.className="msg "+(type==="user"?"user":"");
+  div.innerHTML="<b>"+name+"</b> : "+text;
+  chat.appendChild(div);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function send(){
+  const val=document.getElementById("input").value;
+  if(!val)return;
+  add("USER",val,"user");
+  document.getElementById("input").value="";
+}
+
+//////////////////////////////////////////////////
+// NASA APOD
+//////////////////////////////////////////////////
+
+async function loadNASA(){
+  add("SYSTEM","Chargement NASA...");
+  const res=await fetch("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY");
+  const data=await res.json();
+
+  document.getElementById("nasa").innerHTML=
+    "<h4>"+data.title+"</h4>"+
+    "<img src='"+data.url+"'>"+
+    "<p>"+data.explanation+"</p>";
+
+  add("NASA","Image du jour chargée");
+}
+
+//////////////////////////////////////////////////
+// MARS
+//////////////////////////////////////////////////
+
+async function loadMars(){
+  add("SYSTEM","Chargement Mars...");
+  const res=await fetch("https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?sol=1000&api_key=DEMO_KEY");
+  const data=await res.json();
+
+  if(data.photos.length>0){
+    document.getElementById("nasa").innerHTML=
+      "<img src='"+data.photos[0].img_src+"'>";
+    add("NASA","Photo Mars chargée");
+  } else {
+    add("NASA","Aucune image trouvée");
+  }
+}
+
+//////////////////////////////////////////////////
+// EARTH EPIC
+//////////////////////////////////////////////////
+
+async function loadEarth(){
+  add("SYSTEM","Chargement Terre...");
+  const res=await fetch("https://api.nasa.gov/EPIC/api/natural/images?api_key=DEMO_KEY");
+  const data=await res.json();
+
+  const img=data[0];
+  const date=img.date.split(" ")[0].replace(/-/g,"/");
+  const url="https://epic.gsfc.nasa.gov/archive/natural/"+date+"/jpg/"+img.image+".jpg";
+
+  document.getElementById("nasa").innerHTML="<img src='"+url+"'>";
+  add("NASA","Image Terre chargée");
+}
+
+//////////////////////////////////////////////////
+// GOOGLE SATELLITE
+//////////////////////////////////////////////////
+
+function loadGoogle(){
+  const key=document.getElementById("gkey").value;
+  if(!key){
+    add("SYSTEM","Ajoute une clé Google");
+    return;
+  }
+
+  document.getElementById("google").innerHTML=
+    '<iframe src="https://www.google.com/maps/embed/v1/view?key='+key+'&center=48.8566,2.3522&zoom=3&maptype=satellite"></iframe>';
+
+  add("GOOGLE","Satellite activé");
+}
+
+//////////////////////////////////////////////////
+// BOOT
+//////////////////////////////////////////////////
+
+add("SYSTEM","V25 READY – APIs RÉELLES ACTIVES");
+
+</script>
+
+</body>
+</html>
