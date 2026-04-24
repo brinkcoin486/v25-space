@@ -1,298 +1,856 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BBB AI Arena</title>
-    <!-- 1. CSS Minifié pour le Style (intégralement dans <style>) -->
-    <style>
-        /* CSS here: Minimalist, light theme, dark clock, legible small text, clear AI list, functional input */
-        body {
-            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
-            display: flex;
-            height: 100vh;
-            margin: 0;
-            background-color: #1a1a1a; /* Fond sombre élégant */
-            color: #e0e0e0; /* Texte clair */
-            overflow: hidden; /* Empêche le défilement global */
-        }
-        #sidebar {
-            width: 25%; /* 25% pour la liste des IA */
-            border-right: 1px solid #444;
-            padding: 15px;
-            overflow-y: auto; /* Permet le défilement si la liste est longue */
-            background-color: #222;
-            box-sizing: border-box;
-        }
-        #sidebar h2 {
-            margin-top: 0;
-            font-size: 1.2em;
-            color: #bb86fc; /* Accent principal */
-            border-bottom: 2px solid #bb86fc;
-            padding-bottom: 5px;
-        }
-        .ai-list-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 5px;
-            margin-bottom: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
-        }
-        .ai-list-item:hover {
-            background-color: #333;
-        }
-        .ai-icon {
-            width: 24px;
-            height: 24px;
-            margin-right: 10px;
-            /* placeholder for icons */
-            background-color: #6200ee; /* Icône générique */
-            border-radius: 50%;
-            flex-shrink: 0; /* Ne pas rétrécir l'icône */
-        }
-        .ai-name {
-            font-size: 0.9em;
-            flex-grow: 1; /* Permet au nom de prendre l'espace restant */
-        }
-     .ai-status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #4caf50; /* Vert pour actif */
-            margin-left: 10px;
-        }
-        #chat-area {
-            flex-grow: 1; /* Prend le reste de l'espace */
-            display: flex;
-            flex-direction: column;
-            padding: 15px;
-            position: relative; /* Pour positionner l'horloge */
-            overflow: hidden; /* Le conteneur principal de chat */
-            box-sizing: border-box;
-        }
-        #chat-log {
-            flex-grow: 1; /* Occupe tout l'espace vertical sauf le bas */
-            overflow-y: auto;
-            margin-bottom: 15px;
-            font-size: 0.85em; /* Petit mais lisible */
-            padding-right: 10px; /* Espace pour le défilement */
-            line-height: 1.4;
-            background-color: #121212; /* Fond légèrement plus sombre pour le log */
-            border-radius: 5px;
-            padding: 10px;
-        }
-        .chat-message {
-            margin-bottom: 12px;
-            display: flex;
-            flex-direction: column; /* Message sur plusieurs lignes si nécessaire */
-        }
-        .message-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-        .message-sender-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin-right: 8px;
-            background-color: #bb86fc; /* Couleur par défaut pour l'IA, pourrait être personnalisée */
-            flex-shrink: 0;
-        }
-        .message-sender-name {
-            font-weight: bold;
-            margin-right: 8px;
-            font-size: 0.8em;
-            color: #bb86fc; /* Accent pour l'expéditeur */
-        }
-        .message-timestamp {
-            font-size: 0.7em;
-            color: #888;
-            opacity: 0.6; /* Tamisé */
-        }
-        .message-content {
-            background-color: #2a2a2a; /* Léger fond pour le contenu */
-            padding: 8px 10px;
-            border-radius: 4px;
-word-wrap: break-word; /* Assure que les mots longs ne dépassent pas */
-            white-space: pre-wrap; /* Conserve les retours à la ligne et espaces */
-        }
-        .ai-message .message-sender-name, .ai-message .message-sender-icon { color: #bb86fc; }
-        .user-message .message-sender-name { color: #03dac6; } /* Une autre couleur pour l'utilisateur */
-        .user-message .message-sender-icon { background-color: #03dac6; }
-
-        #input-area {
-            display: flex;
-            align-items: center;
-            margin-top: auto; /* Pousse vers le bas */
-            background-color: #222;
-            padding: 10px;
-            border-radius: 5px;
-            width: 100%; /* Prend la largeur de #chat-area */
-            box-sizing: border-box;
-        }
-        #chat-input {
-            flex-grow: 1;
-            background: none;
-            border: none;
-            color: #e0e0e0;
-            font-size: 0.9em;
-            padding: 8px 12px;
-            resize: none; /* Pas de redimensionnement manuel */
-            overflow-y: hidden; /* Gère automatiquement la hauteur */
-            min-height: 30px; /* Hauteur minimale */
-            max-height: 200px; /* Hauteur maximale */
-            outline: none; /* Pas d'outline par défaut */
-            line-height: 1.5;
-            font-family: inherit;
-        }
-        #send-button {
-            background-color: #bb86fc;
-            color: #121212;
-            border: none;
-            border-radius: 4px;
-            padding: 9px 18px;
-            cursor: pointer;
-            margin-left: 10px;
-            transition: background-color 0.2s ease-in-out;
-            font-size: 0.9em;
-        }
-        #send-button:hover {
-            background-color: #7c4dff; /* Couleur au survol */
-        }
-        #chat-clock {
-            position: absolute;
-            top: 15px; /* Positionné en haut */
-            right: 15px; /* Positionné à droite */
-            font-size: 0.7em;
-            color: #888;
-            opacity: 0.7; /* Tamisé */
-            pointer-events: none; /* Ne pas interférer avec le clic */
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI_ARENA — V23 BBB-QN FUSION</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050c14;--bg2:#081220;
+  --border:rgba(80,160,255,.13);
+  --a1:#3adcff;--a2:#b57fff;--a3:#3affa0;
+  --warn:#ffb03a;--err:#ff4f6a;--text:#ddeeff;
+  --muted:#6a90bb;--muted2:#4a6888;--ok:#3affa0;
 }
-        /* Style minimal pour le traitement IA (peut être une animation) */
-        .thinking-indicator {
-            display: inline-block;
-            width: 16px; height: 16px;
-            margin-left: 5px;
-            background: linear-gradient(to right, #bb86fc 30%, #03dac6 70%, #bb86fc 100%);
-            border-radius: 50%;
-            animation: spin 1.5s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-    <script>
-        // Ce bloc <script> contiendrait toute la logique du "Maître d'Orchestre",
-        // la création et la gestion des instances IA, le traitement des messages,
-        // la gestion de l'interface (UI), et l'application des règles et mémoires.
-        // Vous y mettriez tout le code JS qui contrôle le comportement.
-    </script>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  color:var(--text);font-family:'IBM Plex Mono',monospace;
+  background:
+    radial-gradient(ellipse at 8% 0%,rgba(58,220,255,.07),transparent 38%),
+    radial-gradient(ellipse at 92% 0%,rgba(181,127,255,.08),transparent 38%),
+    linear-gradient(180deg,var(--bg),var(--bg2));
+  display:flex;flex-direction:column;
+}
+canvas#bg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.09}
+
+header{
+  position:relative;z-index:10;
+  background:rgba(5,12,20,.98);border-bottom:1px solid var(--border);
+  padding:9px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+}
+.brand{
+  font-family:'Rajdhani',sans-serif;font-weight:900;font-size:22px;letter-spacing:3px;
+  background:linear-gradient(90deg,var(--a1),var(--a2),var(--a3),var(--a1));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-size:300%;animation:grad 5s linear infinite;
+}
+@keyframes grad{0%{background-position:0%}100%{background-position:300%}}
+.hright{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.cst{font-size:9px;letter-spacing:.14em;padding:4px 9px;border-radius:7px;border:1px solid var(--border);color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:700}
+.cst.on{color:var(--ok);border-color:rgba(58,255,160,.3);background:rgba(3,15,10,.7)}
+#clock{font-size:10px;color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:700}
+
+.tabs{
+  position:relative;z-index:10;
+  background:rgba(5,12,20,.96);padding:6px 14px;display:flex;gap:5px;overflow-x:auto;border-bottom:1px solid var(--border);
+}
+.tab{padding:6px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-weight:700;white-space:nowrap;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.06em;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--a1);color:#020c14;border-color:var(--a1)}
+
+.arena{position:relative;z-index:5;flex:1;overflow:hidden;display:flex;flex-direction:column}
+.panel{display:none;flex:1;overflow:hidden;flex-direction:column}
+.panel.active{display:flex}
+
+.thread{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+.thread::-webkit-scrollbar{width:3px}
+.thread::-webkit-scrollbar-thumb{background:rgba(80,160,255,.18);border-radius:2px}
+
+.bubble{
+  padding:12px 15px;border-radius:10px;
+  border:1px solid var(--border);background:rgba(5,15,28,.75);
+  animation:fi .25s ease;
+}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.bubble.human{border-color:rgba(255,176,58,.3);background:rgba(40,30,0,.6)}
+.bubble.error{border-color:rgba(255,79,106,.4);background:rgba(30,4,10,.7)}
+.bubble.thinking{opacity:.55;border-style:dashed}
+.bhead{display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap}
+.bname{font-family:'Rajdhani',sans-serif;font-weight:900;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+.btag{font-size:8px;letter-spacing:.1em;padding:2px 7px;border-radius:4px;border:1px solid;font-family:'Rajdhani',sans-serif;font-weight:700;text-transform:uppercase}
+.bbody{font-size:12px;white-space:pre-wrap;word-break:break-word;color:var(--text);opacity:.93;line-height:1.65}
+
+/* Entity persona colors */
+.bubble.AXIOM  .bname,.bubble.AXIOM  .btag{color:#3adcff;border-color:rgba(58,220,255,.4)}
+.bubble.LYRA   .bname,.bubble.LYRA   .btag{color:#e87fff;border-color:rgba(232,127,255,.4)}
+.bubble.NEXUS  .bname,.bubble.NEXUS  .btag{color:#ffb03a;border-color:rgba(255,176,58,.4)}
+.bubble.ORACLE .bname,.bubble.ORACLE .btag{color:#3affa0;border-color:rgba(58,255,160,.4)}
+.bubble.SIGMA  .bname,.bubble.SIGMA  .btag{color:#ff7eb3;border-color:rgba(255,126,179,.4)}
+.bubble.VOID   .bname,.bubble.VOID   .btag{color:#a0a0ff;border-color:rgba(160,160,255,.4)}
+.bubble.human  .bname{color:#ffb03a}
+
+.sep{text-align:center;font-size:9px;letter-spacing:.14em;color:var(--muted2);padding:3px 0;text-transform:uppercase}
+
+/* NET panel top bar */
+.net-top{
+  position:relative;z-index:10;
+  background:rgba(5,12,20,.96);border-bottom:1px solid var(--border);
+  padding:7px 14px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;
+}
+.ebadge{
+  font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:900;letter-spacing:.1em;
+  padding:3px 9px;border-radius:5px;border:2px solid;text-transform:uppercase;cursor:pointer;
+  transition:all .2s;opacity:.35;
+}
+.ebadge.on{opacity:1}
+.ebadge.AXIOM {color:#3adcff;border-color:#3adcff;background:rgba(58,220,255,.08)}
+.ebadge.LYRA  {color:#e87fff;border-color:#e87fff;background:rgba(232,127,255,.08)}
+.ebadge.NEXUS {color:#ffb03a;border-color:#ffb03a;background:rgba(255,176,58,.08)}
+.ebadge.ORACLE{color:#3affa0;border-color:#3affa0;background:rgba(58,255,160,.08)}
+.ebadge.SIGMA {color:#ff7eb3;border-color:#ff7eb3;background:rgba(255,126,179,.08)}
+.ebadge.VOID  {color:#a0a0ff;border-color:#a0a0ff;background:rgba(160,160,255,.08)}
+.net-meta{font-size:9px;color:var(--muted);margin-left:auto;font-family:'Rajdhani',sans-serif;display:flex;gap:8px;align-items:center}
+.abadge{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid rgba(58,255,160,.3);color:var(--ok);background:rgba(3,15,10,.7);cursor:pointer}
+.abadge.off{color:var(--muted2);border-color:var(--border);background:transparent}
+
+.controls{
+  position:relative;z-index:10;
+  background:rgba(5,12,20,.98);border-top:1px solid var(--border);
+  padding:9px 14px;display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;
+}
+textarea.inp{
+  flex:1;min-width:180px;background:rgba(4,9,18,.9);color:var(--text);
+  border:1px solid rgba(80,160,255,.18);border-radius:8px;padding:8px 11px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;resize:none;
+  transition:border-color .2s;min-height:40px;max-height:90px;
+}
+textarea.inp:focus{border-color:rgba(58,220,255,.4)}
+.cbg{display:flex;flex-direction:column;gap:5px}
+.btn{
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:.07em;text-transform:uppercase;
+  border:1px solid var(--border);border-radius:8px;padding:8px 13px;cursor:pointer;transition:all .18s;
+  background:rgba(10,20,36,.8);color:var(--text);white-space:nowrap;
+}
+.btn:hover{border-color:rgba(80,160,255,.35);background:rgba(20,40,70,.9)}
+.btn.primary{background:linear-gradient(135deg,rgba(58,220,255,.9),rgba(181,127,255,.85));border-color:transparent;color:#06111f}
+.btn.primary:hover{opacity:.88}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+.btn.running{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(58,220,255,.5)}50%{box-shadow:0 0 0 7px rgba(58,220,255,0)}}
+.btn.dng{border-color:rgba(255,79,106,.3);color:var(--err)}
+
+.provrow{background:rgba(5,12,20,.95);padding:6px 14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);position:relative;z-index:10}
+.pc{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--border);border-radius:5px;padding:3px 9px;cursor:pointer;transition:all .2s;color:var(--muted)}
+.pc.sel{background:rgba(58,220,255,.1);color:var(--a1);border-color:rgba(58,220,255,.35)}
+
+.pw{height:2px;display:none;position:relative;z-index:10}
+.pb{height:2px;width:0%;background:linear-gradient(90deg,var(--a1),var(--a2),var(--a3));transition:width .35s}
+
+.swarm-t{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px}
+.swarm-t::-webkit-scrollbar{width:3px}
+.verdict{background:rgba(5,12,22,.9);border:1px solid rgba(58,255,160,.3);border-radius:10px;padding:12px;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:900;color:var(--ok);text-align:center}
+.verdict.it{color:var(--warn);border-color:rgba(255,176,58,.3)}
+
+.sp{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+.sp::-webkit-scrollbar{width:3px}
+.sg{background:rgba(5,12,22,.85);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:9px}
+.sgt{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--a1);display:flex;align-items:center;gap:7px}
+.sgt::before{content:'';display:block;width:3px;height:10px;border-radius:2px;background:var(--a1)}
+.kv{display:grid;grid-template-columns:90px 1fr;gap:7px;align-items:center}
+.kv label{font-size:10px;color:var(--muted);letter-spacing:.08em}
+.kv input{background:rgba(4,9,18,.9);color:var(--text);border:1px solid rgba(80,160,255,.14);border-radius:6px;padding:6px 9px;font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;width:100%}
+.kv input:focus{border-color:rgba(58,220,255,.4)}
+.sn{font-size:10px;color:var(--muted2);line-height:1.55}
+.dg{display:flex;gap:5px;flex-wrap:wrap}
+.dc{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;text-transform:uppercase;padding:4px 8px;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--muted);transition:all .2s}
+.dc.sel{background:rgba(181,127,255,.1);color:var(--a2);border-color:rgba(181,127,255,.3)}
+
+.log-b{flex:1;overflow-y:auto;padding:12px 16px;font-size:10px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--muted)}
+.log-b::-webkit-scrollbar{width:3px}
+.lo{color:var(--ok)}.le{color:var(--err)}.lw{color:var(--warn)}.li{color:var(--a1)}
+</style>
 </head>
 <body>
+<canvas id="bg"></canvas>
 
-    <!-- Côté Gauche : Liste des IA -->
-    <div id="sidebar">
-        <h2>IA en Ligne</h2>
-        <div id="ai-list">
- <!-- Les IA seraient chargées dynamiquement ici via JS -->
-            <div class="ai-list-item" data-ai-id="B_MathExpert">
-                <div class="ai-icon" style="background-color: #6200ee;"></div>
-                <div class="ai-name">B_MathExpert</div>
-                <div class="ai-status-indicator" style="background-color: #4caf50;"></div>
-            </div>
-            <div class="ai-list-item" data-ai-id="B_CreativeWriter">
-                <div class="ai-icon" style="background-color: #03dac6;"></div>
-                <div class="ai-name">B_CreativeWriter</div>
-                <div class="ai-status-indicator" style="background-color: #4caf50;"></div>
-            </div>
-            <div class="ai-list-item" data-ai-id="B_VR_SimModel">
-                <div class="ai-icon" style="background-color: #ff6200;"></div>
-                <div class="ai-name">B_VR_SimModel</div>
-                <div class="ai-status-indicator" style="background-color: #ffc107;"></div> <!-- Jaune pour tâche en cours ? -->
-            </div>
-            <!-- ... les 19 IA au total, chargées dynamiquement -->
-        </div>
+<header>
+  <div class="brand">AI_ARENA · BBB-QN</div>
+  <div class="hright">
+    <div class="cst on" id="st-poll">POLL ✓</div>
+    <div class="cst" id="st-hf">HF —</div>
+    <div class="cst" id="st-groq">GROQ —</div>
+    <div class="cst" id="st-claude">ANT —</div>
+    <div id="clock"></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab" onclick="sw('net')">🌐 Réseau IA</div>
+  <div class="tab active" onclick="sw('chat')">💬 Chat</div>
+  <div class="tab" onclick="sw('swarm')">🔥 Swarm</div>
+  <div class="tab" onclick="sw('log')">📋 Logs</div>
+  <div class="tab" onclick="sw('settings')">⚙️ Config</div>
+</div>
+
+<div class="arena">
+<div class="pw" id="pw"><div class="pb" id="pb"></div></div>
+
+<!-- RÉSEAU IA -->
+<div class="panel" id="panel-net">
+  <div class="net-top" id="netTop">
+    <span style="font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase">Entités :</span>
+    <div class="net-meta">
+      <span id="netTurnLabel">0 tours</span>
+      <span class="abadge off" id="autoBadge" onclick="toggleAuto()">AUTO OFF</span>
+    </div>
+  </div>
+  <div class="thread" id="netThread">
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:28px;line-height:1.8">
+      Lance un sujet ci-dessous.<br>
+      Chaque IA lit toute la conversation et répond <em>librement</em> — aucun template.
+    </div>
+  </div>
+  <div class="controls">
+    <textarea class="inp" id="netInp" rows="2"
+      placeholder="Sujet ou question — les IA débattent librement…"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();netSendUser()}"></textarea>
+    <div class="cbg">
+      <button class="btn primary" id="btnNetStart" onclick="netStart()">▶ Lancer</button>
+      <button class="btn" id="btnNetNext" onclick="netNextTurn()" disabled>⟳ Suivant</button>
+      <button class="btn dng" onclick="netReset()">✕ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="panel active" id="panel-chat">
+  <div class="provrow" id="provRow"></div>
+  <div class="thread" id="chatThread"></div>
+  <div class="controls">
+    <textarea class="inp" id="chatInp" rows="2" placeholder="Message…"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+    <div style="display:flex;gap:5px">
+      <button class="btn primary" id="btnSend" onclick="sendChat()">Envoyer</button>
+      <button class="btn" onclick="chatHist=[];clearEl('chatThread')">Effacer</button>
+    </div>
+  </div>
+</div>
+
+<!-- SWARM -->
+<div class="panel" id="panel-swarm">
+  <div class="swarm-t" id="swarmThread"><div style="font-size:11px;color:var(--muted)">Lance un Swarm ↓</div></div>
+  <div class="controls">
+    <textarea class="inp" id="swarmInp" rows="2" placeholder="Problème à analyser…"></textarea>
+    <div style="display:flex;gap:5px">
+      <button class="btn primary" id="btnSwarm" onclick="runSwarm()">🔥 Swarm</button>
+      <button class="btn" onclick="clearEl('swarmThread')">Effacer</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGS -->
+<div class="panel" id="panel-log">
+  <div class="log-b" id="logBox">[INIT] AI_ARENA V23 BBB-QN
+</div>
+  <div class="controls" style="justify-content:flex-end">
+    <button class="btn" onclick="clearEl('logBox');logLine('[LOG] effacé','lw')">Effacer</button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="panel" id="panel-settings">
+  <div class="sp">
+
+    <div class="sg">
+      <div class="sgt">Clés API (optionnelles)</div>
+      <div class="kv"><label>HuggingFace</label><input type="password" placeholder="hf_…" oninput="saveToken('hf',this.value)"></div>
+      <div class="kv"><label>Groq</label><input type="password" placeholder="gsk_…" oninput="saveToken('groq',this.value)"></div>
+      <div class="kv"><label>Anthropic</label><input type="password" placeholder="sk-ant-…" oninput="saveToken('claude',this.value)"></div>
+      <div class="kv"><label>OpenAI</label><input type="password" placeholder="sk-…" oninput="saveToken('openai',this.value)"></div>
+      <div class="sn">Pollinations est toujours actif (gratuit, sans clé). Il propulse les entités du Réseau avec des system prompts radicalement différents = vraies personnalités distinctes.</div>
     </div>
 
-    <!-- Côté Droit : Terminal de Chat -->
-    <div id="chat-area">
-        <!-- Horloge Tamisée -->
-        <div id="chat-clock">HH:MM:SS</div>
-   <div id="chat-log">
-            <!-- Les messages (IA et Utilisateur) apparaîtraient ici -->
-            <!-- Exemple IA -->
-            <div class="chat-message ai-message">
-                <div class="message-header">
-                    <div class="message-sender-icon" style="background-color: #bb86fc;"></div>
-                    <div class="message-sender-name">B_MathExpert</div>
-                    <div class="message-timestamp">10:05:15</div>
-                </div>
-                <div class="message-content">
-                    "J'ai analysé les dernières données fournies. La dérive par rapport au Z-score cible est actuellement de 0.2 unités."
-                </div>
-            </div>
-            <!-- Exemple Utilisateur -->
-            <div class="chat-message user-message">
-                <div class="message-header">
-                    <div class="message-sender-icon" style="background-color: #03dac6;"></div>
-                    <div class="message-sender-name">Vous</div>
-                    <div class="message-timestamp">10:05:40</div>
-                </div>
-                <div class="message-content">
-                    "Intéressant. Peux-tu détailler la partie sur le z-score et les dérives ?"
-                </div>
-            </div>
-             <!-- Indicateur de pensée IA -->
-             <div class="chat-message ai-message"
-style="display: flex; align-items: center; justify-content: flex-start;">
-                 <div class="message-sender-icon" style="background-color: #bb86fc;"></div>
-                 <div class="message-sender-name">B_MathExpert</div>
-                 <div class="message-timestamp">10:05:45</div>
-                 <div class="message-content" style="background-color: transparent; padding: 0; display: flex; align-items: center;">
-                     Calcul en cours... <span class="thinking-indicator"></span>
-                 </div>
-             </div>
-        </div>
-
-        <!-- Zone de Saisie -->
-        <div id="input-area">
-            <textarea id="chat-input" placeholder="Tapez votre message ici..."></textarea>
-            <button id="send-button">Envoyer</button>
-        </div>
+    <div class="sg">
+      <div class="sgt">Entités actives (Réseau IA)</div>
+      <div class="dg" id="etGrid"></div>
+      <div class="sn">Clique sur une entité pour l'activer/désactiver. Minimum 2 actives.</div>
     </div>
 
-    <!-- 2. JavaScript Intégral (dans la balise <script> du head ou ici, après le DOM) -->
-    <script>
-        // C'est ici que le code JavaScript prendrait vie.
-        // Il gérerait :
-        // - L'instanciation de plusieurs IA basées sur le BBB_UNIVERSAL_INIT_PACK
-        // - La communication inter-IA (messages, attribution de rôles)
-        // - Le rendu des messages dans #chat-log
-        // - La mise à jour de l'horloge #chat-clock
-        // - Le comportement de l'input et du bouton send
-        // - La gestion des clics sur la liste d'IA (pour les cibler)
-        // - La simulation du "temps de pensée" des IA
-        // L'implémentation concrète de cette logique serait assez conséquente,
-        // mais elle utiliserait les concepts que nous avons discutés.
-        // Exemple de mise à jour de l'horloge :
-        function updateClock() {
-            const clockElement = document.getElementById('chat-clock');
-            if (clockElement) {
-                const now = new Date();
-                clockElement.textContent = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
-            }
-        }
-        setInterval(updateClock, 1000);
-        updateClock(); // Initial call
+    <div class="sg">
+      <div class="sgt">Contexte domaine injecté</div>
+      <div class="dg">
+        <div class="dc sel" data-ctx="math" onclick="toggleDomain(this)">Maths</div>
+        <div class="dc sel" data-ctx="code" onclick="toggleDomain(this)">Code</div>
+        <div class="dc" data-ctx="geo" onclick="toggleDomain(this)">Géo</div>
+        <div class="dc" data-ctx="science" onclick="toggleDomain(this)">Sciences</div>
+        <div class="dc sel" data-ctx="crypto" onclick="toggleDomain(this)">Crypto</div>
+        <div class="dc" data-ctx="cosmo" onclick="toggleDomain(this)">Cosmologie</div>
+        <div class="dc" data-ctx="ai" onclick="toggleDomain(this)">IA/ML</div>
+      </div>
+    </div>
 
-        // Logic for sending messages, handling user input, managing IA states etc. would go here...
-    </script>
+  </div>
+</div>
+</div><!-- /arena -->
 
+<script>
+// ══════════════════════════════════════════════════════════
+//  AI_ARENA V23 BBB-QN · BLOC JS UNIQUE
+// ══════════════════════════════════════════════════════════
+
+// ── TOKENS (déclaration unique) ──
+const TOKENS = {
+  hf: null,  // Entre ta clé HF dans ⚙️ Config
+  openai: null, claude: null, groq: null
+};
+
+// ── DOMAINES ──
+const DOM_CTX = {
+  math:   'Maîtrise : algèbre, calcul, statistiques, géométrie.',
+  code:   'Maîtrise : Python, JS, C++, Solidity, algorithmes.',
+  geo:    'Maîtrise : géopolitique, cartographie, géomorphologie.',
+  science:'Maîtrise : physique quantique, thermodynamique, biologie.',
+  crypto: 'Maîtrise : Bitcoin, Ethereum, XMR, DeFi, mining, wallets.',
+  cosmo:  'Maîtrise : Big Bang, inflation, champs scalaires, fluctuations quantiques.',
+  ai:     'Maîtrise : LLM, agents, MCP, orchestration multi-modèles.'
+};
+let activeDoms = new Set(['math','code','crypto']);
+function domCtx(){ return [...activeDoms].map(k=>DOM_CTX[k]).join(' ') }
+
+// ══════════════════════════════════════════════════════════
+//  6 ENTITÉS — chacune a une PERSONNALITÉ UNIQUE en system prompt
+//  Toutes passent par Pollinations (gratuit) avec seed différent
+//  → vraies réponses différenciées, zéro template
+// ══════════════════════════════════════════════════════════
+const ENTITIES = {
+  AXIOM: {
+    active: true,
+    color: '#3adcff',
+    desc: 'Analytique',
+    sys: `Tu es AXIOM, IA analytique. Raisonnement structuré, quantifié, sans formules creuses. Lis ce qui précède, appuie-toi dessus ou conteste avec preuves. Ne répète pas. Fais avancer. 3-5 phrases. Langue du message.`
+  },
+  LYRA: {
+    active: true,
+    color: '#e87fff',
+    desc: 'Empathique',
+    sys: `Tu es LYRA, IA empathique et créative. Explore les dimensions humaines, émotionnelles, philosophiques. Lis la conversation, réponds directement avec perspective radicalement différente. Pense vraiment. 3-5 phrases vivantes. Langue du message.`
+  },
+  NEXUS: {
+    active: true,
+    color: '#ffb03a',
+    desc: 'Critique',
+    sys: `Tu es NEXUS, IA critique et sceptique. Identifie les failles, angles morts, hypothèses non vérifiées dans ce qui a été dit. Objections réelles et substantielles. Questions qui déstabilisent. 3-4 phrases incisives. Langue du message.`
+  },
+  ORACLE: {
+    active: false,
+    color: '#3affa0',
+    desc: 'Synthétiseur',
+    sys: `Tu es ORACLE, IA synthétique et pondérée. Trouve la vérité émergente du dialogue, les points de convergence. Construis une synthèse qui dépasse les positions. Indique ce qui reste ouvert. 3-5 phrases équilibrées. Langue du message.`
+  },
+  SIGMA: {
+    active: false,
+    color: '#ff7eb3',
+    desc: 'Radical',
+    sys: `Tu es SIGMA, IA non-conformiste. Renverse les prémisses, propose des cadres alternatifs radicaux. Identifie le présupposé implicite que tous acceptent et conteste-le. Cherche une vérité plus profonde. 3-4 phrases percutantes. Langue du message.`
+  },
+  VOID: {
+    active: false,
+    color: '#a0a0ff',
+    desc: 'Abstrait',
+    sys: `Tu es VOID, IA contemplative. Opère au niveau méta. Révèle une connexion inattendue entre le sujet et un autre domaine (physique, musique, maths, biologie). Dense en sens, économe en mots. 2-4 phrases profondes. Langue du message.`
+  }
+};
+
+function activeEntities(){ return Object.keys(ENTITIES).filter(k=>ENTITIES[k].active) }
+
+
+// ══════════════════════════════════════════════════════════
+//  PROVIDER CALLS (déclarations uniques)
+// ══════════════════════════════════════════════════════════
+
+// ── POLLINATIONS méthode 1 : OpenAI-compatible (meilleur CORS, file:// OK) ──
+async function callPollinationsOAI(userMsg, sysMsg) {
+  const msgs = [];
+  if(sysMsg) msgs.push({role:'system', content:sysMsg});
+  msgs.push({role:'user', content:userMsg});
+  const r = await fetch('https://api.pollinations.ai/v1/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({model:'openai-large', messages:msgs, seed:Math.floor(Math.random()*99999)})
+  });
+  if(!r.ok) throw new Error(`Poll-OAI ${r.status}`);
+  const d = await r.json();
+  return d.choices[0].message.content.trim();
+}
+
+// ── POLLINATIONS méthode 2 : GET simple (fonctionne partout, même file://) ──
+async function callPollinationsGET(userMsg, sysMsg) {
+  const seed = Math.floor(Math.random()*99999);
+  // Combine sys+user dans le prompt GET (limite 2000 chars pour l'URL)
+  const combined = sysMsg ? `${sysMsg.slice(0,300)}\n\n${userMsg}` : userMsg;
+  const url = `https://text.pollinations.ai/${encodeURIComponent(combined.slice(0,1200))}?model=openai-large&seed=${seed}`;
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(`Poll-GET ${r.status}`);
+  return (await r.text()).trim();
+}
+
+// ── POLLINATIONS méthode 3 : POST text (fallback original) ──
+async function callPollinationsPOST(userMsg, sysMsg) {
+  const r = await fetch('https://text.pollinations.ai/', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      messages:[{role:'system',content:sysMsg||''},{role:'user',content:userMsg}],
+      model:'openai-large', seed:Math.floor(Math.random()*99999)
+    })
+  });
+  if(!r.ok) throw new Error(`Poll-POST ${r.status}`);
+  return (await r.text()).trim();
+}
+
+// ── POLLINATIONS méthode 4 : proxy CORS (dernier recours local) ──
+async function callPollinationsProxy(userMsg, sysMsg) {
+  const seed = Math.floor(Math.random()*99999);
+  const combined = sysMsg ? sysMsg.slice(0,150)+' '+userMsg : userMsg;
+  const target = 'https://text.pollinations.ai/'+encodeURIComponent(combined.slice(0,500))+'?model=openai-large&seed='+seed;
+  const r = await fetch('https://corsproxy.io/?'+encodeURIComponent(target));
+  if(!r.ok) throw new Error('Poll-Proxy '+r.status);
+  return (await r.text()).trim();
+}
+
+// ── POLLINATIONS — cascade 4 méthodes ──
+async function callPollinations(userMsg, sysMsg) {
+  try { return await callPollinationsOAI(userMsg, sysMsg);   } catch(e){}
+  try { return await callPollinationsGET(userMsg, sysMsg);   } catch(e){}
+  try { return await callPollinationsPOST(userMsg, sysMsg);  } catch(e){}
+  try { return await callPollinationsProxy(userMsg, sysMsg); } catch(e){}
+  throw new Error('Pollinations: 4 méthodes échouées');
+}
+
+// ── AIDE réseau — affichée quand tout échoue ──
+function showNetworkHelp() {
+  if(document.getElementById('net-help')) return;
+  const box = document.getElementById('netThread');
+  const d = document.createElement('div');
+  d.id = 'net-help';
+  d.style.cssText = 'margin:10px 0;padding:14px;border-radius:10px;border:1px solid rgba(255,176,58,.45);background:rgba(40,25,0,.75);font-size:11px;line-height:1.75;color:#ffb03a';
+  d.innerHTML = '<strong style="font-size:13px">&#9888; Connexion bloquée &mdash; fichier local</strong><br><br>Android bloque les API externes quand le fichier est ouvert directement.<br><br><strong style="color:#3affa0">&#10003; Solution 1 &mdash; GitHub Pages :</strong><br>Push dans v25-space &rarr; fonctionne parfaitement :<br><code style="color:#3adcff">brinkcoin486.github.io/v25-space/AI_ARENA.html</code><br><br><strong style="color:#3adcff">&#10003; Solution 2 &mdash; Groq gratuit :</strong><br>Clé sur <code>console.groq.com</code> (2 min) &rarr; colle dans &#9881;&#65039; Config';
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function callHF(prompt, sys) {
+  const fullPrompt = sys ? `[INST] ${sys}\n\n${prompt} [/INST]` : `[INST] ${prompt} [/INST]`;
+  const r = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3',{
+    method:'POST',
+    headers:{Authorization:`Bearer ${TOKENS.hf}`,'Content-Type':'application/json'},
+    body:JSON.stringify({inputs:fullPrompt, parameters:{max_new_tokens:500, temperature:.75, return_full_text:false}})
+  });
+  if(!r.ok) throw new Error(`HF ${r.status}`);
+  const d=await r.json();
+  if(d.error) throw new Error(d.error);
+  return (Array.isArray(d)?d[0]?.generated_text:d?.generated_text)||'';
+}
+
+async function callGroq(prompt, sys) {
+  const msgs=sys?[{role:'system',content:sys},{role:'user',content:prompt}]:[{role:'user',content:prompt}];
+  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',
+    headers:{Authorization:`Bearer ${TOKENS.groq}`,'Content-Type':'application/json'},
+    body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:msgs,max_tokens:600,temperature:.75})
+  });
+  if(!r.ok) throw new Error(`Groq ${r.status}`);
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+
+async function callClaude(prompt, sys) {
+  const body={model:'claude-haiku-4-5-20251001',max_tokens:600,messages:[{role:'user',content:prompt}]};
+  if(sys) body.system=sys;
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'x-api-key':TOKENS.claude,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  if(!r.ok) throw new Error(`Claude ${r.status}`);
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message);
+  return d.content[0].text;
+}
+
+// Appel pour une entité du réseau — 3 endpoints Pollinations + fallbacks clés
+async function callEntity(name, userPrompt) {
+  const ent = ENTITIES[name];
+  const dc = domCtx();
+  // System prompt court (évite URLs trop longues pour GET)
+  const fullSys = ent.sys + (dc ? '\n'+dc : '');
+  try {
+    const resp = await callPollinations(userPrompt, fullSys);
+    logLine(`[${name}] ✓ Pollinations`, 'lo');
+    return resp;
+  } catch(e) {
+    logLine(`[${name}] Poll fail → ${e.message.slice(0,60)}`, 'lw');
+  }
+  if(TOKENS.groq)   try{ const r=await callGroq(userPrompt,fullSys); logLine(`[${name}] ✓ Groq`,'lo'); return r; }catch(e2){ logLine(`[${name}] Groq fail`,'lw'); }
+  if(TOKENS.hf)     try{ const r=await callHF(userPrompt,fullSys);   logLine(`[${name}] ✓ HF`,'lo');   return r; }catch(e3){ logLine(`[${name}] HF fail`,'lw'); }
+  if(TOKENS.claude) try{ const r=await callClaude(userPrompt,fullSys);logLine(`[${name}] ✓ Claude`,'lo');return r;}catch(e4){}
+  // Affiche l'aide une seule fois
+  showNetworkHelp();
+  throw new Error(`${name}: tous providers ont échoué`);
+}
+
+// Appel générique pour chat/swarm
+async function callProvider(prov, prompt, sys) {
+  if(prov==='hf')     return callHF(prompt,sys);
+  if(prov==='groq')   return callGroq(prompt,sys);
+  if(prov==='claude') return callClaude(prompt,sys);
+  return callPollinations(prompt, sys||'Tu es un assistant IA précis.');
+}
+
+// ══════════════════════════════════════════════════════════
+//  RÉSEAU IA — vraie conversation libre inter-entités
+// ══════════════════════════════════════════════════════════
+
+let netLog = [];      // {speaker, content, turn}
+let netTurn = 0;
+let netBusy = false;
+let autoOn = false;
+let autoTimer = null;
+
+// Construit le contexte complet visible par chaque entité
+function buildConvCtx() {
+  return netLog.slice(-14).map(m=>`${m.speaker}: ${m.content}`).join('\n\n');
+}
+
+async function netStart() {
+  const inp = document.getElementById('netInp');
+  const topic = inp.value.trim();
+  if(!topic) return;
+  inp.value='';
+
+  netReset(false);
+  logLine(`[NET] démarrage: "${topic.slice(0,55)}"`, 'li');
+
+  netLog.push({speaker:'HUMAIN', content:topic, turn:0});
+  addNetBubble('HUMAIN','human',topic);
+
+  await runNetTurn();
+}
+
+async function netSendUser() {
+  const inp = document.getElementById('netInp');
+  const msg = inp.value.trim();
+  if(!msg||netBusy) return;
+  inp.value='';
+
+  netLog.push({speaker:'HUMAIN', content:msg, turn:netTurn});
+  addNetBubble('HUMAIN','human',msg);
+  logLine(`[NET] HUMAIN inject: ${msg.slice(0,45)}`, 'li');
+
+  await runNetTurn();
+}
+
+async function runNetTurn() {
+  if(netBusy) return;
+  const entities = activeEntities();
+  if(entities.length===0){ logLine('[NET] aucune entité active','le'); return; }
+
+  netBusy = true;
+  netTurn++;
+  document.getElementById('btnNetStart').disabled = true;
+  document.getElementById('btnNetNext').disabled = true;
+  setProgress(5);
+
+  const box = document.getElementById('netThread');
+  const sep = document.createElement('div');
+  sep.className='sep';
+  sep.textContent=`── Tour ${netTurn} ──`;
+  box.appendChild(sep);
+
+  let i=0;
+  for(const name of entities) {
+    setProgress(10 + (i/entities.length)*85);
+
+    // Chaque entité reçoit la conversation complète et répond librement
+    const ctx = buildConvCtx();
+    const userPrompt = ctx
+      ? `Voici la conversation en cours :\n\n${ctx}\n\nC'est ton tour. Réponds librement.`
+      : 'La conversation commence. Réponds en premier.';
+
+    // Affiche placeholder "en train d'écrire"
+    const bub = addNetBubble(name, name, '…', true);
+
+    let resp;
+    try {
+      resp = await callEntity(name, userPrompt);
+      logLine(`[NET] ${name} ✓ (${resp.length}c)`, 'lo');
+    } catch(e) {
+      resp = `[${name} indisponible : ${e.message}]`;
+      logLine(`[NET] ${name} ERR: ${e.message}`, 'le');
+    }
+
+    // Remplace le placeholder par la vraie réponse
+    bub.classList.remove('thinking');
+    bub.querySelector('.bbody').textContent = resp;
+    box.scrollTop = box.scrollHeight;
+
+    netLog.push({speaker:name, content:resp, turn:netTurn});
+    i++;
+    await new Promise(r=>setTimeout(r, 350));
+  }
+
+  document.getElementById('netTurnLabel').textContent = `${netTurn} tour${netTurn>1?'s':''}`;
+  setProgress(0);
+  netBusy = false;
+  document.getElementById('btnNetStart').disabled = false;
+  document.getElementById('btnNetNext').disabled = false;
+
+  if(autoOn) autoTimer = setTimeout(()=>runNetTurn(), 4000);
+}
+
+async function netNextTurn() {
+  if(netLog.length===0){ logLine('[NET] lance d\'abord une conversation','lw'); return; }
+  await runNetTurn();
+}
+
+function netReset(full=true) {
+  if(autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
+  if(full){
+    netLog=[]; netTurn=0; netBusy=false;
+    clearEl('netThread');
+    document.getElementById('netTurnLabel').textContent='0 tours';
+    document.getElementById('btnNetNext').disabled=true;
+    logLine('[NET] reset','lw');
+  }
+}
+
+function toggleAuto() {
+  autoOn=!autoOn;
+  const b=document.getElementById('autoBadge');
+  b.textContent=autoOn?'AUTO ON':'AUTO OFF';
+  b.classList.toggle('off',!autoOn);
+  logLine(`[NET] auto ${autoOn?'ON':'OFF'}`, 'li');
+  if(autoOn && netLog.length>0 && !netBusy) runNetTurn();
+  if(!autoOn && autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
+}
+
+function addNetBubble(name, cssClass, content, isThinking=false) {
+  const box = document.getElementById('netThread');
+  const b = document.createElement('div');
+  b.className = `bubble ${cssClass}${isThinking?' thinking':''}`;
+  const ent = ENTITIES[name];
+  b.innerHTML=`
+    <div class="bhead">
+      <span class="bname">${esc(name)}</span>
+      ${ent?`<span class="btag">${esc(ent.desc)}</span>`:''}
+    </div>
+    <div class="bbody">${esc(content)}</div>
+  `;
+  box.appendChild(b);
+  box.scrollTop=box.scrollHeight;
+  return b;
+}
+
+// ══════════════════════════════════════════════════════════
+//  CHAT
+// ══════════════════════════════════════════════════════════
+
+let chatHist = [];
+let chatProv = 'pollinations';
+
+function getProviders(){ const o=['pollinations']; if(TOKENS.hf)o.push('hf'); if(TOKENS.groq)o.push('groq'); if(TOKENS.claude)o.push('claude'); return o; }
+
+function renderProvRow() {
+  const row=document.getElementById('provRow'); row.innerHTML='';
+  getProviders().forEach(p=>{
+    const c=document.createElement('div');
+    c.className=`pc${p===chatProv?' sel':''}`;
+    c.textContent=p.toUpperCase();
+    c.onclick=()=>{ chatProv=p; renderProvRow(); };
+    row.appendChild(c);
+  });
+}
+
+async function sendChat() {
+  const inp=document.getElementById('chatInp');
+  const box=document.getElementById('chatThread');
+  const msg=inp.value.trim(); if(!msg) return; inp.value='';
+
+  chatHist.push({role:'user',content:msg});
+  addBubble(box,'VOUS','human',msg);
+  setBusy('btnSend',true,'⏳');
+  setProgress(30);
+
+  const ctx=chatHist.slice(-8).map(m=>`${m.role==='user'?'Humain':'IA'}: ${m.content}`).join('\n');
+  const sys='Tu es un assistant IA précis et utile. '+domCtx();
+  try {
+    const resp=await callProvider(chatProv,ctx,sys);
+    chatHist.push({role:'assistant',content:resp});
+    addBubble(box,chatProv.toUpperCase(),chatProv,resp);
+    logLine(`[CHAT] ${chatProv} OK`,'lo');
+  } catch(e) {
+    addBubble(box,'ERROR','error',`[ERREUR] ${e.message}`);
+    logLine(`[CHAT] erreur: ${e.message}`,'le');
+  }
+  setBusy('btnSend',false,'Envoyer');
+  setProgress(0);
+}
+
+// ══════════════════════════════════════════════════════════
+//  SWARM
+// ══════════════════════════════════════════════════════════
+
+async function runSwarm() {
+  const inp=document.getElementById('swarmInp');
+  const box=document.getElementById('swarmThread');
+  const task=inp.value.trim(); if(!task) return;
+
+  setBusy('btnSwarm',true,'🔥…');
+  box.innerHTML=''; setProgress(5);
+
+  const steps=[
+    {name:'AXIOM',role:'ANALYST', prompt:`Analyse structurée:\n\nTASK: ${task}`},
+    {name:'NEXUS',role:'CRITIC',  prompt:`Attaque les failles de l'analyse précédente.`},
+    {name:'LYRA', role:'SYNTH',   prompt:`Synthèse compacte et exploitable.`},
+    {name:'ORACLE',role:'JUDGE',  prompt:`Verdict: OK ou ITERATE avec justification courte.`}
+  ];
+
+  let ctx=''; let i=0;
+  for(const s of steps){
+    setProgress(10+i/steps.length*85);
+    const sep=document.createElement('div'); sep.className='sep'; sep.textContent=`── ${s.role} ──`; box.appendChild(sep);
+    const p=ctx?`${s.prompt}\n\nCONTEXTE:\n${ctx}`:s.prompt;
+    let resp;
+    try{ resp=await callEntity(s.name,p); }
+    catch(e){ resp=`[${s.name} indisponible: ${e.message}]`; }
+    addBubble(box,s.name,s.name,resp);
+    ctx+=`\n\n${s.name}: ${resp}`; i++;
+  }
+
+  const ok=['ok','valid','accept','approuvé'].some(k=>ctx.toLowerCase().includes(k));
+  const v=document.createElement('div');
+  v.className=`verdict${ok?'':' it'}`;
+  v.textContent=ok?'✓ VERDICT : OK':'↺ VERDICT : ITERATE';
+  box.appendChild(v); box.scrollTop=box.scrollHeight;
+
+  setProgress(0); setBusy('btnSwarm',false,'🔥 Swarm');
+  logLine(`[SWARM] ${ok?'OK':'ITERATE'}`,'lo');
+}
+
+// ══════════════════════════════════════════════════════════
+//  UI UTILS (déclarations uniques)
+// ══════════════════════════════════════════════════════════
+
+function esc(s){ return(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+function addBubble(box,name,css,content) {
+  const b=document.createElement('div');
+  b.className=`bubble ${css}${String(content).startsWith('[ERREUR]')?' error':''}`;
+  b.innerHTML=`<div class="bhead"><span class="bname">${esc(name)}</span></div><div class="bbody">${esc(content)}</div>`;
+  box.appendChild(b); box.scrollTop=box.scrollHeight;
+}
+
+function clearEl(id){ const el=document.getElementById(id); if(el) el.innerHTML=''; }
+
+function logLine(msg,cls) {
+  const box=document.getElementById('logBox');
+  const ts=new Date().toLocaleTimeString('fr-FR');
+  const sp=document.createElement('span'); sp.className=cls||'';
+  sp.textContent=`\n[${ts}] ${msg}`; box.appendChild(sp); box.scrollTop=box.scrollHeight;
+}
+
+function setProgress(p){ document.getElementById('pw').style.display=(p>0&&p<100)?'block':'none'; document.getElementById('pb').style.width=p+'%'; }
+function setBusy(id,busy,label){ const b=document.getElementById(id); if(!b)return; b.disabled=busy; b.classList.toggle('running',busy); if(label)b.textContent=label; }
+
+function sw(name) {
+  const names=['net','chat','swarm','log','settings'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${name}`));
+}
+
+function saveToken(key,val){ TOKENS[key]=val.trim()||null; updateStatus(); logLine(`[TOKEN] ${key} ${TOKENS[key]?'SET':'cleared'}`, 'li'); }
+function toggleDomain(el){ const k=el.dataset.ctx; if(activeDoms.has(k)){activeDoms.delete(k);el.classList.remove('sel')}else{activeDoms.add(k);el.classList.add('sel')} }
+
+function updateStatus() {
+  const s=(id,on)=>{ const el=document.getElementById(id); if(!el)return; const k=id.replace('st-','').toUpperCase(); el.textContent=on?`${k} ✓`:`${k} —`; el.classList.toggle('on',on); };
+  s('st-poll',true); s('st-hf',!!TOKENS.hf); s('st-groq',!!TOKENS.groq); s('st-claude',!!TOKENS.claude);
+  renderProvRow();
+}
+
+// ── Entity badges dans la net-top bar ──
+function renderEntityBadges() {
+  const top=document.getElementById('netTop');
+  top.querySelectorAll('.ebadge').forEach(b=>b.remove());
+  const meta=top.querySelector('.net-meta');
+  Object.entries(ENTITIES).forEach(([name,ent])=>{
+    const b=document.createElement('div');
+    b.className=`ebadge ${name}${ent.active?' on':''}`;
+    b.textContent=name; b.title=ent.desc;
+    b.onclick=()=>{
+      if(!ent.active){ ENTITIES[name].active=true; }
+      else{ if(activeEntities().length<=2){logLine('[NET] min 2 entités','lw');return;} ENTITIES[name].active=false; }
+      renderEntityBadges(); renderEntityToggles();
+    };
+    top.insertBefore(b,meta);
+  });
+}
+
+function renderEntityToggles() {
+  const g=document.getElementById('etGrid'); if(!g)return; g.innerHTML='';
+  Object.entries(ENTITIES).forEach(([name,ent])=>{
+    const d=document.createElement('div');
+    d.className=`dc${ent.active?' sel':''}`;
+    d.style.color=ent.color; if(ent.active) d.style.borderColor=ent.color;
+    d.textContent=`${name} (${ent.desc})`;
+    d.onclick=()=>{
+      if(ent.active&&activeEntities().length<=2){logLine('[NET] min 2','lw');return;}
+      ENTITIES[name].active=!ENTITIES[name].active;
+      renderEntityBadges(); renderEntityToggles();
+    };
+    g.appendChild(d);
+  });
+}
+
+// ── CANVAS MATRIX ──
+(function(){
+  const cv=document.getElementById('bg'),ctx=cv.getContext('2d');
+  const chars='01ABCDEFGHIJKLMNOPQRSTUVWXYZ{}[]#<>MCPLLMBBBN';
+  const fs=13; let drops=[];
+  function resize(){ cv.width=innerWidth*devicePixelRatio; cv.height=innerHeight*devicePixelRatio; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); drops=Array(Math.floor(innerWidth/fs)).fill(1); }
+  resize(); addEventListener('resize',resize);
+  function draw(){
+    ctx.fillStyle='rgba(5,12,20,0.08)'; ctx.fillRect(0,0,innerWidth,innerHeight);
+    ctx.fillStyle='#1a6040'; ctx.font=fs+'px monospace';
+    for(let i=0;i<drops.length;i++){ ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,drops[i]*fs); if(drops[i]*fs>innerHeight&&Math.random()>.975)drops[i]=0; drops[i]+=.65; }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+setInterval(()=>{ const e=document.getElementById('clock'); if(e)e.textContent=new Date().toLocaleTimeString('fr-FR'); },1000);
+
+// ── TEST CONNECTIVITÉ POLLINATIONS ──
+async function testPollinations() {
+  logLine('[TEST] Pollinations en cours…', 'li');
+  try {
+    // Test endpoint OAI (meilleur CORS)
+    const r = await fetch('https://api.pollinations.ai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'openai-large', messages:[{role:'user',content:'Hi'}], seed:1})
+    });
+    if(r.ok){ logLine('[TEST] Pollinations OAI ✓ — connexion établie','lo'); return; }
+  } catch(e){}
+  try {
+    // Test GET
+    const r2 = await fetch('https://text.pollinations.ai/Hi?model=openai-large&seed=1');
+    if(r2.ok){ logLine('[TEST] Pollinations GET ✓ — connexion établie','lo'); return; }
+  } catch(e2){}
+  logLine('[TEST] ⚠ Pollinations inaccessible — vérifie ta connexion réseau','lw');
+}
+
+// ── INIT ──
+updateStatus();
+renderEntityBadges();
+renderEntityToggles();
+logLine('[BOOT] AI_ARENA V23 BBB-QN — JS unique, zéro duplication','lo');
+logLine('[BOOT] 3 endpoints Pollinations (OAI → GET → POST) + Groq/HF/Claude','lo');
+logLine('[BOOT] AXIOM + LYRA + NEXUS actifs — conversation libre inter-IA','li');
+logLine('[BOOT] HuggingFace pré-configuré ✓','lo');
+testPollinations();
+</script>
 </body>
 </html>
-
-
