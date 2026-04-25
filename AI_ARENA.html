@@ -788,39 +788,325 @@ function renderEntityBadges() {
   });
 }
 
-function renderEntityToggles() {
-  const g=document.getElementById('etGrid'); if(!g)return; g.innerHTML='';
-  Object.entries(ENTITIES).forEach(([name,ent])=>{
-    const d=document.createElement('div');
-    d.className=`dc${ent.active?' sel':''}`;
-    d.style.color=ent.color; if(ent.active) d.style.borderColor=ent.color;
-    d.textContent=`${name} (${ent.desc})`;
-    d.onclick=()=>{
-      if(ent.active&&activeEntities().length<=2){logLine('[NET] min 2','lw');return;}
-      ENTITIES[name].active=!ENTITIES[name].active;
-      renderEntityBadges(); renderEntityToggles();
-    };
-    g.appendChild(d);
-  });
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>AI ARENA V32 — IA AUTO-APPRENANTE</title>
+<style>
+:root{--bg:#020810;--p:#061426;--b:#123456;--c:#28d4ff;--v:#a855f7;--g:#22ff9a;--o:#f59e0b;--r:#ef4444;--t:#cce8ff;--m:#5b7d99}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:radial-gradient(circle at 20% 0%,#10294a,transparent 35%),linear-gradient(#020810,#030d1a);color:var(--t);font-family:monospace;display:flex;flex-direction:column}
+canvas{position:fixed;inset:0;z-index:0;opacity:.08}
+header{z-index:2;padding:10px 14px;border-bottom:1px solid #123;background:#020810ee;display:flex;gap:8px;align-items:center}
+.brand{font-weight:900;letter-spacing:3px;font-size:18px;background:linear-gradient(90deg,var(--c),var(--v),var(--g));-webkit-background-clip:text;color:transparent}
+.status{margin-left:auto;color:var(--g);font-size:11px}
+.tabs{z-index:2;display:flex;gap:5px;padding:6px 10px;border-bottom:1px solid #123;background:#020810ee}
+.tab{padding:6px 11px;border:1px solid #123;border-radius:7px;color:var(--m);font-weight:700;cursor:pointer}
+.tab.on{background:var(--c);color:#001018}
+main{z-index:1;flex:1;display:flex;min-height:0}
+.side{width:78px;border-right:1px solid #123;background:#020810ee;padding:8px 4px;overflow:auto}
+.agent{padding:7px 3px;margin-bottom:5px;border:1px solid transparent;border-radius:8px;text-align:center;font-size:8px;cursor:pointer;color:var(--m)}
+.agent.on{border-color:var(--c);color:var(--c);background:#062033}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g);margin:0 auto 4px;box-shadow:0 0 8px var(--g)}
+.room{flex:1;display:flex;flex-direction:column;min-width:0}
+.stream{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.msg{display:flex;gap:8px;animation:in .2s ease}
+@keyframes in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg.you{flex-direction:row-reverse}
+.bubble{max-width:84%;padding:10px 12px;border:1px solid #123;border-radius:11px;background:#061426dd;line-height:1.55;font-size:12px;white-space:pre-wrap;word-break:break-word}
+.you .bubble{border-color:#6d35bd;background:#130c25dd}
+.name{font-size:10px;font-weight:900;letter-spacing:2px;margin-bottom:4px;color:var(--c)}
+.score{font-size:9px;color:var(--g);margin-top:4px}
+.controls{display:flex;gap:7px;padding:9px;border-top:1px solid #123;background:#020810ee}
+textarea{flex:1;background:#030d1a;color:var(--t);border:1px solid #123;border-radius:9px;padding:9px;font-family:monospace;resize:none;min-height:45px;outline:none}
+button{background:linear-gradient(135deg,var(--c),var(--v));border:0;border-radius:9px;padding:9px 12px;font-weight:900;cursor:pointer;color:#02101a}
+button.red{background:linear-gradient(135deg,#ef4444,#7f1d1d);color:white}
+.panel{display:none;z-index:1;flex:1;overflow:auto;padding:12px}
+.panel.on{display:block}
+.card{border:1px solid #123;background:#061426cc;border-radius:12px;padding:12px;margin-bottom:10px}
+.k{color:var(--c);font-weight:900;letter-spacing:1px}
+.small{font-size:11px;color:var(--m);line-height:1.6}
+.memory-item{padding:8px;border:1px solid #123;border-radius:8px;margin:6px 0;background:#030d1a}
+.matrix-letter{display:inline-block;animation:w .45s ease both}
+@keyframes w{0%{opacity:0;transform:translateY(8px) rotate(-8deg)}100%{opacity:1;transform:none}}
+@media(max-width:560px){.side{width:62px}.bubble{max-width:88%;font-size:11px}.brand{font-size:14px}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<header>
+  <div class="brand">AI ARENA V32</div>
+  <div class="status" id="status">ONLINE</div>
+</header>
+
+<div class="tabs">
+  <div class="tab on" onclick="showTab('room',this)">ROOM</div>
+  <div class="tab" onclick="showTab('memory',this)">MÉMOIRE</div>
+  <div class="tab" onclick="showTab('scores',this)">SCORES</div>
+</div>
+
+<main id="roomPanel">
+  <div class="side" id="side"></div>
+  <section class="room">
+    <div class="stream" id="stream"></div>
+    <div class="controls">
+      <textarea id="input" placeholder="Écris ton sujet..."></textarea>
+      <button onclick="send()">ENVOYER</button>
+      <button onclick="toggleAuto()" id="autoBtn">AUTO OFF</button>
+      <button class="red" onclick="resetRoom()">RESET</button>
+    </div>
+  </section>
+</main>
+
+<section class="panel" id="memoryPanel">
+  <div class="card">
+    <div class="k">MÉMOIRE AUTO-APPRENANTE</div>
+    <div class="small">Le système mémorise les meilleures réponses, les scores et les thèmes dans localStorage.</div>
+  </div>
+  <div id="memoryList"></div>
+</section>
+
+<section class="panel" id="scoresPanel">
+  <div class="card">
+    <div class="k">SCORES IA</div>
+    <div class="small">Chaque agent gagne une moyenne selon ses réponses.</div>
+  </div>
+  <div id="scoreList"></div>
+</section>
+
+<script>
+const AGENTS=["AXIOM","NEXUS","LYRA","ORACLE","OMEGA","TITAN","ATHENA","PROMETHEUS","GENESIS"];
+
+const PROFILE={
+AXIOM:"Tu es AXIOM, IA analytique. Réponds avec logique, structure, précision.",
+NEXUS:"Tu es NEXUS, IA critique. Trouve les failles, risques, contradictions.",
+LYRA:"Tu es LYRA, IA créative. Apporte intuition, imagination et angle humain.",
+ORACLE:"Tu es ORACLE, IA synthèse. Clarifie et donne une conclusion simple.",
+OMEGA:"Tu es OMEGA, super IA globale. Relie toutes les idées en stratégie finale.",
+TITAN:"Tu es TITAN, IA robuste. Donne solution directe, pratique et réaliste.",
+ATHENA:"Tu es ATHENA, IA stratégique. Priorise étapes, risques et décision.",
+PROMETHEUS:"Tu es PROMETHEUS, IA innovation. Propose idées nouvelles et utiles.",
+GENESIS:"Tu es GENESIS, IA évolution. Améliore le système et la prochaine itération."
+};
+
+let roomLog=[];
+let busy=false;
+let auto=false;
+let autoTimer=null;
+
+let memory=JSON.parse(localStorage.getItem("arena_v32_memory")||"[]");
+let scores=JSON.parse(localStorage.getItem("arena_v32_scores")||"{}");
+
+AGENTS.forEach(a=>{
+ if(!scores[a])scores[a]={total:0,rounds:0,avg:0,last:0};
+});
+
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+function matrixText(s){
+ return [...s].map((c,i)=>`<span class="matrix-letter" style="animation-delay:${Math.min(i*.012,.35)}s">${c===" "?"&nbsp;":esc(c)}</span>`).join("");
 }
 
-// ── CANVAS MATRIX ──
-(function(){
-  const cv=document.getElementById('bg'),ctx=cv.getContext('2d');
-  const chars='01ABCDEFGHIJKLMNOPQRSTUVWXYZ{}[]#<>MCPLLMBBBN';
-  const fs=13; let drops=[];
-  function resize(){ cv.width=innerWidth*devicePixelRatio; cv.height=innerHeight*devicePixelRatio; ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); drops=Array(Math.floor(innerWidth/fs)).fill(1); }
-  resize(); addEventListener('resize',resize);
-  function draw(){
-    ctx.fillStyle='rgba(5,12,20,0.08)'; ctx.fillRect(0,0,innerWidth,innerHeight);
-    ctx.fillStyle='#1a6040'; ctx.font=fs+'px monospace';
-    for(let i=0;i<drops.length;i++){ ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,drops[i]*fs); if(drops[i]*fs>innerHeight&&Math.random()>.975)drops[i]=0; drops[i]+=.65; }
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
+function add(name,text,type="",score=null){
+ const d=document.createElement("div");
+ d.className="msg "+type;
+ d.innerHTML=`<div class="bubble"><div class="name">${esc(name)}</div><div>${type==="you"?matrixText(text):esc(text)}</div>${score!==null?`<div class="score">score ${score.toFixed(1)}</div>`:""}</div>`;
+ stream.appendChild(d);
+ stream.scrollTop=stream.scrollHeight;
+}
 
-setInterval(()=>{ const e=document.getElementById('clock'); if(e)e.textContent=new Date().toLocaleTimeString('fr-FR'); },1000);
+async function callAI(prompt){
+ try{
+  const url="https://text.pollinations.ai/"+encodeURIComponent(prompt.slice(0,900))+"?model=openai-large";
+  const r=await fetch(url);
+  if(!r.ok)throw new Error(r.status);
+  return (await r.text()).trim();
+ }catch(e){
+  return "Connexion IA indisponible.";
+ }
+}
+
+function detectContext(t){
+ if(/bitcoin|crypto|eth|btc|trading|wallet/i.test(t))return"crypto";
+ if(/code|html|css|javascript|python|bug/i.test(t))return"code";
+ if(/science|univers|physique|quantique|temps/i.test(t))return"science";
+ if(/stratégie|business|projet|github|app/i.test(t))return"projet";
+ return"général";
+}
+
+function selectAgents(ctx){
+ const c=detectContext(ctx);
+ let base=["AXIOM","NEXUS","ORACLE","GENESIS"];
+ if(c==="crypto")base=["AXIOM","NEXUS","ATHENA","TITAN","OMEGA","GENESIS"];
+ if(c==="code")base=["AXIOM","TITAN","NEXUS","GENESIS","OMEGA"];
+ if(c==="science")base=["AXIOM","PROMETHEUS","ORACLE","OMEGA","GENESIS"];
+ if(c==="projet")base=["ATHENA","TITAN","NEXUS","OMEGA","GENESIS"];
+ const best=Object.entries(scores).sort((a,b)=>b[1].avg-a[1].avg)[0]?.[0];
+ if(best&&!base.includes(best))base.push(best);
+ return [...new Set(base)].slice(0,6);
+}
+
+function scoreText(t){
+ let s=Math.min(t.length/45,6);
+ if(/solution|stratégie|étape|risque|conclusion|propose|amélioration/i.test(t))s+=3;
+ if(/erreur|limite|preuve|logique|structure/i.test(t))s+=2;
+ if(t.length>120)s+=1;
+ return Math.min(s,12);
+}
+
+function learn(agent,score,text,topic){
+ scores[agent].total+=score;
+ scores[agent].rounds++;
+ scores[agent].last=score;
+ scores[agent].avg=scores[agent].total/scores[agent].rounds;
+ memory.push({time:Date.now(),agent,score,topic,sample:text.slice(0,220)});
+ if(memory.length>80)memory.shift();
+ localStorage.setItem("arena_v32_scores",JSON.stringify(scores));
+ localStorage.setItem("arena_v32_memory",JSON.stringify(memory));
+ renderMemory();
+ renderScores();
+}
+
+async function send(){
+ const v=input.value.trim();
+ if(!v||busy)return;
+ input.value="";
+ add("VOUS",v,"you");
+ roomLog.push({speaker:"USER",content:v});
+ await runCore();
+}
+
+async function runCore(){
+ if(busy)return;
+ busy=true;
+ status.textContent="IA EN COURS...";
+ const ctx=roomLog.slice(-10).map(m=>`${m.speaker}: ${m.content}`).join("\n");
+ const topic=detectContext(ctx);
+ const selected=selectAgents(ctx);
+ let responses=[];
+
+ for(const agent of selected){
+  add(agent,"...");
+  const prompt=`${PROFILE[agent]}
+
+Contexte détecté: ${topic}
+Conversation:
+${ctx}
+
+Réponds selon ton rôle, utilement, sans répétition.`;
+  const res=await callAI(prompt);
+  const last=document.querySelectorAll(".msg .bubble");
+  last[last.length-1].children[1].textContent=res;
+  const sc=scoreText(res);
+  last[last.length-1].insertAdjacentHTML("beforeend",`<div class="score">score ${sc.toFixed(1)}</div>`);
+  roomLog.push({speaker:agent,content:res,score:sc});
+  responses.push({agent,res,score:sc});
+  learn(agent,sc,res,topic);
+  await new Promise(r=>setTimeout(r,250));
+ }
+
+ responses.sort((a,b)=>b.score-a.score);
+ const best=responses[0];
+ add("BEST IA",`${best.agent} gagne ce tour.\n\n${best.res}`,"",best.score);
+
+ const consensusPrompt=`Tu es CONSENSUS V32. Fusionne ces réponses en verdict final, puis donne la prochaine action.
+
+${responses.map(r=>`${r.agent} (${r.score.toFixed(1)}): ${r.res}`).join("\n\n")}`;
+ const verdict=await callAI(consensusPrompt);
+ add("CONSENSUS V32",verdict);
+ roomLog.push({speaker:"CONSENSUS V32",content:verdict});
+
+ await genesisEvolution();
+ busy=false;
+ status.textContent="ONLINE";
+}
+
+async function genesisEvolution(){
+ const ctx=roomLog.slice(-8).map(m=>`${m.speaker}: ${m.content}`).join("\n");
+ const idea=await callAI(`GENESIS: propose une micro-amélioration du système AI ARENA basée sur cette conversation:\n${ctx}`);
+ memory.push({time:Date.now(),agent:"GENESIS",score:0,topic:"auto-évolution",sample:idea.slice(0,220)});
+ localStorage.setItem("arena_v32_memory",JSON.stringify(memory));
+}
+
+function toggleAuto(){
+ auto=!auto;
+ autoBtn.textContent=auto?"AUTO ON":"AUTO OFF";
+ if(auto)autoLoop();else clearTimeout(autoTimer);
+}
+
+async function autoLoop(){
+ if(!auto)return;
+ if(roomLog.length===0){
+  roomLog.push({speaker:"SYSTEM",content:"Débat autonome: améliorez AI ARENA V32, trouvez failles, proposez options."});
+  add("SYSTEM","Débat autonome lancé.");
+ }
+ await runCore();
+ autoTimer=setTimeout(autoLoop,5000);
+}
+
+function resetRoom(){
+ roomLog=[];
+ stream.innerHTML="";
+ add("SYSTEM","AI ARENA V32 réinitialisé.");
+}
+
+function renderSide(){
+ side.innerHTML="";
+ AGENTS.forEach(a=>{
+  const d=document.createElement("div");
+  d.className="agent on";
+  d.innerHTML=`<div class="dot"></div>${a}<br><span style="font-size:7px;color:#5b7d99">${scores[a].avg.toFixed(1)}</span>`;
+  side.appendChild(d);
+ });
+}
+
+function renderMemory(){
+ memoryList.innerHTML=memory.slice().reverse().map(m=>`
+ <div class="memory-item">
+  <div class="k">${esc(m.agent)} · ${esc(m.topic)} · ${new Date(m.time).toLocaleTimeString("fr-FR")}</div>
+  <div class="small">${esc(m.sample)}</div>
+ </div>`).join("") || `<div class="small">Aucune mémoire.</div>`;
+}
+
+function renderScores(){
+ scoreList.innerHTML=Object.entries(scores).sort((a,b)=>b[1].avg-a[1].avg).map(([a,s])=>`
+ <div class="memory-item">
+  <div class="k">${a}</div>
+  <div class="small">moyenne ${s.avg.toFixed(1)} · tours ${s.rounds} · dernier ${s.last.toFixed(1)}</div>
+ </div>`).join("");
+}
+
+function showTab(name,el){
+ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
+ el.classList.add("on");
+ roomPanel.style.display=name==="room"?"flex":"none";
+ memoryPanel.classList.toggle("on",name==="memory");
+ scoresPanel.classList.toggle("on",name==="scores");
+ if(name==="memory")renderMemory();
+ if(name==="scores")renderScores();
+}
+
+add("SYSTEM","V32 actif — IA auto-apprenante, mémoire locale, consensus, super agents.");
+renderSide();renderMemory();renderScores();
+
+const cv=document.getElementById("bg"),cx=cv.getContext("2d");
+function rs(){cv.width=innerWidth;cv.height=innerHeight}rs();onresize=rs;
+let drops=Array(Math.floor(innerWidth/13)).fill(1);
+const chars="01AIV32COREGENESISΩ";
+(function draw(){
+ cx.fillStyle="rgba(2,8,16,.08)";cx.fillRect(0,0,cv.width,cv.height);
+ cx.fillStyle="#0d4a2a";cx.font="13px monospace";
+ drops.forEach((y,i)=>{cx.fillText(chars[Math.random()*chars.length|0],i*13,y*13);if(y*13>innerHeight&&Math.random()>.975)drops[i]=0;drops[i]+=.55});
+ requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
+ocaleTimeString('fr-FR'); },1000);
 
 // ── TEST CONNECTIVITÉ POLLINATIONS ──
 async function testPollinations() {
