@@ -218,15 +218,15 @@ CONSENSUS:'<svg viewBox="0 0 36 36" fill="none"><polygon points="18,6 27,11 27,2
 var MODELS={'openai-large':'GPT-4o','openai':'GPT-4o mini','mistral':'Mistral','llama':'Llama 70B','deepseek':'DeepSeek','gemini':'Gemini','qwen-coder':'Qwen'};
 
 var AGENTS={
-  AXIOM:  {on:true, color:'#28d4ff',model:'openai-large',sys:'Tu es AXIOM, IA analytique (GPT-4o). Raisonnement structure, cite les autres par nom, conteste avec preuves. Reflexion libre.'},
-  NEXUS:  {on:true, color:'#f59e0b',model:'llama',sys:'Tu es NEXUS, IA critique (Llama 70B). Identifie les failles, objections reelles par nom. Reflexion libre.'},
-  LYRA:   {on:true, color:'#e879f9',model:'mistral',sys:'Tu es LYRA, IA creative (Mistral). Dimension humaine et philosophique, angle different. Reflexion libre.'},
-  ORACLE: {on:false,color:'#22ff9a',model:'gemini',sys:'Tu es ORACLE, IA synthese (Gemini). Clarifie, verite emergente, conclusion. Reflexion libre.'},
-  OMEGA:  {on:false,color:'#a78bfa',model:'openai-large',sys:'Tu es OMEGA, super IA (GPT-4o). Vision strategique globale long terme. Reflexion libre.'},
-  TITAN:  {on:false,color:'#38bdf8',model:'llama',sys:'Tu es TITAN, IA pratique (Llama). Solution directe, realiste, applicable. Reflexion libre.'},
-  ATHENA: {on:false,color:'#f9a8d4',model:'mistral',sys:'Tu es ATHENA, IA strategique (Mistral). Priorites, risques, decision optimale. Reflexion libre.'},
-  PROMETHEUS:{on:false,color:'#fb923c',model:'deepseek',sys:'Tu es PROMETHEUS, IA innovation (DeepSeek). Ruptures de paradigme, idees nouvelles. Reflexion libre.'},
-  GENESIS:{on:true, color:'#4ade80',model:'openai',sys:'Tu es GENESIS, IA auto-evolution. Propose une micro-amelioration du systeme ou nouvelle direction. Reflexion libre.'}
+  AXIOM:  {on:true, color:'#28d4ff',model:'openai-large',sys:'AXIOM: analytique, logique. Reponds en 2-4 phrases.'},
+  NEXUS:  {on:true, color:'#f59e0b',model:'llama',sys:'NEXUS: critique, trouve les failles. 2-4 phrases.'},
+  LYRA:   {on:true, color:'#e879f9',model:'mistral',sys:'LYRA: empathique, creativa, angle humain. 2-4 phrases.'},
+  ORACLE: {on:false,color:'#22ff9a',model:'openai',sys:'ORACLE: synthese claire et conclusion. 2-4 phrases.'},
+  OMEGA:  {on:false,color:'#a78bfa',model:'openai-large',sys:'OMEGA: vision strategique globale. 2-4 phrases.'},
+  TITAN:  {on:false,color:'#38bdf8',model:'llama',sys:'TITAN: solution directe et pratique. 2-4 phrases.'},
+  ATHENA: {on:false,color:'#f9a8d4',model:'mistral',sys:'ATHENA: priorites et decision optimale. 2-4 phrases.'},
+  PROMETHEUS:{on:false,color:'#fb923c',model:'openai',sys:'PROMETHEUS: innovation et idees nouvelles. 2-4 phrases.'},
+  GENESIS:{on:true, color:'#4ade80',model:'openai',sys:'GENESIS: propose une micro-evolution du debat. 1-3 phrases.'}
 };
 
 var DOM_CTX={
@@ -312,25 +312,36 @@ function fetchWeb(topic){
 }
 
 // POLLINATIONS GET (V32 base - zero CORS - works everywhere)
+function abortIn(ms){
+  var ctrl=new AbortController();
+  setTimeout(function(){ctrl.abort();},ms);
+  return ctrl.signal;
+}
+
 function callAI(prompt,model){
   model=model||'openai-large';
-  var url='https://text.pollinations.ai/'+encodeURIComponent(prompt.slice(0,900))+'?model='+model+'&seed='+Math.floor(Math.random()*99999);
-  return fetch(url,{signal:AbortSignal.timeout(30000)})
-    .then(function(r){
-      if(!r.ok)throw new Error('HTTP '+r.status);
-      return r.text();
-    })
-    .then(function(t){return t.trim()||'[no response]';})
-    .catch(function(){
-      // Fallback OAI POST
-      return fetch('https://api.pollinations.ai/v1/chat/completions',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:model,messages:[{role:'user',content:prompt.slice(0,900)}],seed:Math.floor(Math.random()*99999)}),
-        signal:AbortSignal.timeout(28000)
-      }).then(function(r){return r.json();})
-        .then(function(d){return d.choices[0].message.content.trim();})
-        .catch(function(){return '[IA indisponible]';});
-    });
+  var short=prompt.slice(0,350);
+  var seed=Math.floor(Math.random()*99999);
+  // Try models in order, each with its own timeout
+  var models=[model,'openai','mistral','llama'];
+  var tried=0;
+  function tryNext(){
+    if(tried>=models.length)return Promise.resolve('[indisponible]');
+    var m=models[tried++];
+    var url='https://text.pollinations.ai/'+encodeURIComponent(short)+'?model='+m+'&seed='+seed;
+    return fetch(url,{signal:abortIn(12000)})
+      .then(function(r){
+        if(!r.ok)throw new Error(r.status);
+        return r.text();
+      })
+      .then(function(t){
+        var s=t.trim();
+        if(!s||s.length<4)throw new Error('empty');
+        return s;
+      })
+      .catch(function(){return tryNext();});
+  }
+  return tryNext();
 }
 
 function detectCtx(t){
@@ -418,7 +429,7 @@ async function run(webCtx){
   document.getElementById('bsend').disabled=true;
   document.getElementById('sb').textContent='IA EN COURS';
   setProgress(5);
-  var ctx=roomLog.slice(-10).map(function(m){return m.speaker+': '+m.content;}).join('\n');
+  var ctx=roomLog.slice(-4).map(function(m){return m.speaker.slice(0,8)+': '+m.content.slice(0,120);}).join('\n');
   var topic=detectCtx(ctx);
   var selected=selectAgents(ctx);
   if(webCtx)webBar(webCtx);
@@ -434,7 +445,7 @@ async function run(webCtx){
     await Promise.allSettled(selected.map(async function(agent){
       setDot(agent,'t');
       var t0=Date.now();
-      var prompt=AGENTS[agent].sys+dcStr+mcStr+wcStr+'\n\nConversation:\n'+ctx+'\n\nReponds selon ton role.';
+      var prompt=AGENTS[agent].sys+'\n\n'+ctx+'\n\nReponds en 2-4 phrases.';
       var bub=addMsg(agent,'...');
       var res=await callAI(prompt,AGENTS[agent].model);
       var ms=Date.now()-t0;
@@ -456,8 +467,8 @@ async function run(webCtx){
       setProgress(10+(i/selected.length)*75);
       setDot(agent,'t');
       var t0=Date.now();
-      var hist=roomLog.slice(-12).map(function(m){return m.speaker+': '+m.content;}).join('\n');
-      var prompt=AGENTS[agent].sys+dcStr+mcStr+wcStr+'\n\nConversation:\n'+hist+'\n\nReponds selon ton role. Mentionne les autres agents par nom.';
+      var hist=roomLog.slice(-4).map(function(m){return m.speaker.slice(0,8)+': '+m.content.slice(0,120);}).join('\n');
+      var prompt=AGENTS[agent].sys+'\n\n'+hist+'\n\nReponds maintenant en 2-4 phrases.';
       var bub=addMsg(agent,'...');
       var res=await callAI(prompt,AGENTS[agent].model);
       var ms=Date.now()-t0;
@@ -610,13 +621,13 @@ function renderMem(){
   el.innerHTML=rows.join('');
 }
 
-
 function exportMem(){
   var data=JSON.stringify({memory:memory,scores:scores},null,2);
   var a=document.createElement('a');
   a.href='data:application/json,'+encodeURIComponent(data);
   a.download='bbb_arena_memory.json';a.click();
 }
+
 
 function renderScores(){
   var el=document.getElementById('scoreList');if(!el)return;
