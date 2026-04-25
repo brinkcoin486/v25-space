@@ -2,1141 +2,780 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AI_ARENA — V23 BBB-QN FUSION</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#050c14;--bg2:#081220;
-  --border:rgba(80,160,255,.13);
-  --a1:#3adcff;--a2:#b57fff;--a3:#3affa0;
-  --warn:#ffb03a;--err:#ff4f6a;--text:#ddeeff;
-  --muted:#6a90bb;--muted2:#4a6888;--ok:#3affa0;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
-body{
-  color:var(--text);font-family:'IBM Plex Mono',monospace;
-  background:
-    radial-gradient(ellipse at 8% 0%,rgba(58,220,255,.07),transparent 38%),
-    radial-gradient(ellipse at 92% 0%,rgba(181,127,255,.08),transparent 38%),
-    linear-gradient(180deg,var(--bg),var(--bg2));
-  display:flex;flex-direction:column;
-}
-canvas#bg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.09}
-
-header{
-  position:relative;z-index:10;
-  background:rgba(5,12,20,.98);border-bottom:1px solid var(--border);
-  padding:9px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
-}
-.brand{
-  font-family:'Rajdhani',sans-serif;font-weight:900;font-size:22px;letter-spacing:3px;
-  background:linear-gradient(90deg,var(--a1),var(--a2),var(--a3),var(--a1));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-size:300%;animation:grad 5s linear infinite;
-}
-@keyframes grad{0%{background-position:0%}100%{background-position:300%}}
-.hright{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
-.cst{font-size:9px;letter-spacing:.14em;padding:4px 9px;border-radius:7px;border:1px solid var(--border);color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:700}
-.cst.on{color:var(--ok);border-color:rgba(58,255,160,.3);background:rgba(3,15,10,.7)}
-#clock{font-size:10px;color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:700}
-
-.tabs{
-  position:relative;z-index:10;
-  background:rgba(5,12,20,.96);padding:6px 14px;display:flex;gap:5px;overflow-x:auto;border-bottom:1px solid var(--border);
-}
-.tab{padding:6px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-weight:700;white-space:nowrap;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.06em;transition:all .2s}
-.tab:hover{color:var(--text)}
-.tab.active{background:var(--a1);color:#020c14;border-color:var(--a1)}
-
-.arena{position:relative;z-index:5;flex:1;overflow:hidden;display:flex;flex-direction:column}
-.panel{display:none;flex:1;overflow:hidden;flex-direction:column}
-.panel.active{display:flex}
-
-.thread{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:8px}
-.thread::-webkit-scrollbar{width:3px}
-.thread::-webkit-scrollbar-thumb{background:rgba(80,160,255,.18);border-radius:2px}
-
-.bubble{
-  padding:12px 15px;border-radius:10px;
-  border:1px solid var(--border);background:rgba(5,15,28,.75);
-  animation:fi .25s ease;
-}
-@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.bubble.human{border-color:rgba(255,176,58,.3);background:rgba(40,30,0,.6)}
-.bubble.error{border-color:rgba(255,79,106,.4);background:rgba(30,4,10,.7)}
-.bubble.thinking{opacity:.55;border-style:dashed}
-.bhead{display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap}
-.bname{font-family:'Rajdhani',sans-serif;font-weight:900;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
-.btag{font-size:8px;letter-spacing:.1em;padding:2px 7px;border-radius:4px;border:1px solid;font-family:'Rajdhani',sans-serif;font-weight:700;text-transform:uppercase}
-.bbody{font-size:12px;white-space:pre-wrap;word-break:break-word;color:var(--text);opacity:.93;line-height:1.65}
-
-/* Entity persona colors */
-.bubble.AXIOM  .bname,.bubble.AXIOM  .btag{color:#3adcff;border-color:rgba(58,220,255,.4)}
-.bubble.LYRA   .bname,.bubble.LYRA   .btag{color:#e87fff;border-color:rgba(232,127,255,.4)}
-.bubble.NEXUS  .bname,.bubble.NEXUS  .btag{color:#ffb03a;border-color:rgba(255,176,58,.4)}
-.bubble.ORACLE .bname,.bubble.ORACLE .btag{color:#3affa0;border-color:rgba(58,255,160,.4)}
-.bubble.SIGMA  .bname,.bubble.SIGMA  .btag{color:#ff7eb3;border-color:rgba(255,126,179,.4)}
-.bubble.VOID   .bname,.bubble.VOID   .btag{color:#a0a0ff;border-color:rgba(160,160,255,.4)}
-.bubble.human  .bname{color:#ffb03a}
-
-.sep{text-align:center;font-size:9px;letter-spacing:.14em;color:var(--muted2);padding:3px 0;text-transform:uppercase}
-
-/* NET panel top bar */
-.net-top{
-  position:relative;z-index:10;
-  background:rgba(5,12,20,.96);border-bottom:1px solid var(--border);
-  padding:7px 14px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;
-}
-.ebadge{
-  font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:900;letter-spacing:.1em;
-  padding:3px 9px;border-radius:5px;border:2px solid;text-transform:uppercase;cursor:pointer;
-  transition:all .2s;opacity:.35;
-}
-.ebadge.on{opacity:1}
-.ebadge.AXIOM {color:#3adcff;border-color:#3adcff;background:rgba(58,220,255,.08)}
-.ebadge.LYRA  {color:#e87fff;border-color:#e87fff;background:rgba(232,127,255,.08)}
-.ebadge.NEXUS {color:#ffb03a;border-color:#ffb03a;background:rgba(255,176,58,.08)}
-.ebadge.ORACLE{color:#3affa0;border-color:#3affa0;background:rgba(58,255,160,.08)}
-.ebadge.SIGMA {color:#ff7eb3;border-color:#ff7eb3;background:rgba(255,126,179,.08)}
-.ebadge.VOID  {color:#a0a0ff;border-color:#a0a0ff;background:rgba(160,160,255,.08)}
-.net-meta{font-size:9px;color:var(--muted);margin-left:auto;font-family:'Rajdhani',sans-serif;display:flex;gap:8px;align-items:center}
-.abadge{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid rgba(58,255,160,.3);color:var(--ok);background:rgba(3,15,10,.7);cursor:pointer}
-.abadge.off{color:var(--muted2);border-color:var(--border);background:transparent}
-
-.controls{
-  position:relative;z-index:10;
-  background:rgba(5,12,20,.98);border-top:1px solid var(--border);
-  padding:9px 14px;display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;
-}
-textarea.inp{
-  flex:1;min-width:180px;background:rgba(4,9,18,.9);color:var(--text);
-  border:1px solid rgba(80,160,255,.18);border-radius:8px;padding:8px 11px;
-  font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;resize:none;
-  transition:border-color .2s;min-height:40px;max-height:90px;
-}
-textarea.inp:focus{border-color:rgba(58,220,255,.4)}
-.cbg{display:flex;flex-direction:column;gap:5px}
-.btn{
-  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;letter-spacing:.07em;text-transform:uppercase;
-  border:1px solid var(--border);border-radius:8px;padding:8px 13px;cursor:pointer;transition:all .18s;
-  background:rgba(10,20,36,.8);color:var(--text);white-space:nowrap;
-}
-.btn:hover{border-color:rgba(80,160,255,.35);background:rgba(20,40,70,.9)}
-.btn.primary{background:linear-gradient(135deg,rgba(58,220,255,.9),rgba(181,127,255,.85));border-color:transparent;color:#06111f}
-.btn.primary:hover{opacity:.88}
-.btn:disabled{opacity:.3;cursor:not-allowed}
-.btn.running{animation:pulse 1s ease-in-out infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(58,220,255,.5)}50%{box-shadow:0 0 0 7px rgba(58,220,255,0)}}
-.btn.dng{border-color:rgba(255,79,106,.3);color:var(--err)}
-
-.provrow{background:rgba(5,12,20,.95);padding:6px 14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);position:relative;z-index:10}
-.pc{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--border);border-radius:5px;padding:3px 9px;cursor:pointer;transition:all .2s;color:var(--muted)}
-.pc.sel{background:rgba(58,220,255,.1);color:var(--a1);border-color:rgba(58,220,255,.35)}
-
-.pw{height:2px;display:none;position:relative;z-index:10}
-.pb{height:2px;width:0%;background:linear-gradient(90deg,var(--a1),var(--a2),var(--a3));transition:width .35s}
-
-.swarm-t{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px}
-.swarm-t::-webkit-scrollbar{width:3px}
-.verdict{background:rgba(5,12,22,.9);border:1px solid rgba(58,255,160,.3);border-radius:10px;padding:12px;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:900;color:var(--ok);text-align:center}
-.verdict.it{color:var(--warn);border-color:rgba(255,176,58,.3)}
-
-.sp{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
-.sp::-webkit-scrollbar{width:3px}
-.sg{background:rgba(5,12,22,.85);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:9px}
-.sgt{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--a1);display:flex;align-items:center;gap:7px}
-.sgt::before{content:'';display:block;width:3px;height:10px;border-radius:2px;background:var(--a1)}
-.kv{display:grid;grid-template-columns:90px 1fr;gap:7px;align-items:center}
-.kv label{font-size:10px;color:var(--muted);letter-spacing:.08em}
-.kv input{background:rgba(4,9,18,.9);color:var(--text);border:1px solid rgba(80,160,255,.14);border-radius:6px;padding:6px 9px;font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none;width:100%}
-.kv input:focus{border-color:rgba(58,220,255,.4)}
-.sn{font-size:10px;color:var(--muted2);line-height:1.55}
-.dg{display:flex;gap:5px;flex-wrap:wrap}
-.dc{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;text-transform:uppercase;padding:4px 8px;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--muted);transition:all .2s}
-.dc.sel{background:rgba(181,127,255,.1);color:var(--a2);border-color:rgba(181,127,255,.3)}
-
-.log-b{flex:1;overflow-y:auto;padding:12px 16px;font-size:10px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--muted)}
-.log-b::-webkit-scrollbar{width:3px}
-.lo{color:var(--ok)}.le{color:var(--err)}.lw{color:var(--warn)}.li{color:var(--a1)}
-</style>
-</head>
-<body>
-<canvas id="bg"></canvas>
-
-<header>
-  <div class="brand">AI_ARENA · BBB-QN</div>
-  <div class="hright">
-    <div class="cst on" id="st-poll">POLL ✓</div>
-    <div class="cst" id="st-hf">HF —</div>
-    <div class="cst" id="st-groq">GROQ —</div>
-    <div class="cst" id="st-claude">ANT —</div>
-    <div id="clock"></div>
-  </div>
-</header>
-
-<div class="tabs">
-  <div class="tab" onclick="sw('net')">🌐 Réseau IA</div>
-  <div class="tab active" onclick="sw('chat')">💬 Chat</div>
-  <div class="tab" onclick="sw('swarm')">🔥 Swarm</div>
-  <div class="tab" onclick="sw('log')">📋 Logs</div>
-  <div class="tab" onclick="sw('settings')">⚙️ Config</div>
-</div>
-
-<div class="arena">
-<div class="pw" id="pw"><div class="pb" id="pb"></div></div>
-
-<!-- RÉSEAU IA -->
-<div class="panel" id="panel-net">
-  <div class="net-top" id="netTop">
-    <span style="font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase">Entités :</span>
-    <div class="net-meta">
-      <span id="netTurnLabel">0 tours</span>
-      <span class="abadge off" id="autoBadge" onclick="toggleAuto()">AUTO OFF</span>
-    </div>
-  </div>
-  <div class="thread" id="netThread">
-    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:28px;line-height:1.8">
-      Lance un sujet ci-dessous.<br>
-      Chaque IA lit toute la conversation et répond <em>librement</em> — aucun template.
-    </div>
-  </div>
-  <div class="controls">
-    <textarea class="inp" id="netInp" rows="2"
-      placeholder="Sujet ou question — les IA débattent librement…"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();netSendUser()}"></textarea>
-    <div class="cbg">
-      <button class="btn primary" id="btnNetStart" onclick="netStart()">▶ Lancer</button>
-      <button class="btn" id="btnNetNext" onclick="netNextTurn()" disabled>⟳ Suivant</button>
-      <button class="btn dng" onclick="netReset()">✕ Reset</button>
-    </div>
-  </div>
-</div>
-
-<!-- CHAT -->
-<div class="panel active" id="panel-chat">
-  <div class="provrow" id="provRow"></div>
-  <div class="thread" id="chatThread"></div>
-  <div class="controls">
-    <textarea class="inp" id="chatInp" rows="2" placeholder="Message…"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
-    <div style="display:flex;gap:5px">
-      <button class="btn primary" id="btnSend" onclick="sendChat()">Envoyer</button>
-      <button class="btn" onclick="chatHist=[];clearEl('chatThread')">Effacer</button>
-    </div>
-  </div>
-</div>
-
-<!-- SWARM -->
-<div class="panel" id="panel-swarm">
-  <div class="swarm-t" id="swarmThread"><div style="font-size:11px;color:var(--muted)">Lance un Swarm ↓</div></div>
-  <div class="controls">
-    <textarea class="inp" id="swarmInp" rows="2" placeholder="Problème à analyser…"></textarea>
-    <div style="display:flex;gap:5px">
-      <button class="btn primary" id="btnSwarm" onclick="runSwarm()">🔥 Swarm</button>
-      <button class="btn" onclick="clearEl('swarmThread')">Effacer</button>
-    </div>
-  </div>
-</div>
-
-<!-- LOGS -->
-<div class="panel" id="panel-log">
-  <div class="log-b" id="logBox">[INIT] AI_ARENA V23 BBB-QN
-</div>
-  <div class="controls" style="justify-content:flex-end">
-    <button class="btn" onclick="clearEl('logBox');logLine('[LOG] effacé','lw')">Effacer</button>
-  </div>
-</div>
-
-<!-- SETTINGS -->
-<div class="panel" id="panel-settings">
-  <div class="sp">
-
-    <div class="sg">
-      <div class="sgt">Clés API (optionnelles)</div>
-      <div class="kv"><label>HuggingFace</label><input type="password" placeholder="hf_…" oninput="saveToken('hf',this.value)"></div>
-      <div class="kv"><label>Groq</label><input type="password" placeholder="gsk_…" oninput="saveToken('groq',this.value)"></div>
-      <div class="kv"><label>Anthropic</label><input type="password" placeholder="sk-ant-…" oninput="saveToken('claude',this.value)"></div>
-      <div class="kv"><label>OpenAI</label><input type="password" placeholder="sk-…" oninput="saveToken('openai',this.value)"></div>
-      <div class="sn">Pollinations est toujours actif (gratuit, sans clé). Il propulse les entités du Réseau avec des system prompts radicalement différents = vraies personnalités distinctes.</div>
-    </div>
-
-    <div class="sg">
-      <div class="sgt">Entités actives (Réseau IA)</div>
-      <div class="dg" id="etGrid"></div>
-      <div class="sn">Clique sur une entité pour l'activer/désactiver. Minimum 2 actives.</div>
-    </div>
-
-    <div class="sg">
-      <div class="sgt">Contexte domaine injecté</div>
-      <div class="dg">
-        <div class="dc sel" data-ctx="math" onclick="toggleDomain(this)">Maths</div>
-        <div class="dc sel" data-ctx="code" onclick="toggleDomain(this)">Code</div>
-        <div class="dc" data-ctx="geo" onclick="toggleDomain(this)">Géo</div>
-        <div class="dc" data-ctx="science" onclick="toggleDomain(this)">Sciences</div>
-        <div class="dc sel" data-ctx="crypto" onclick="toggleDomain(this)">Crypto</div>
-        <div class="dc" data-ctx="cosmo" onclick="toggleDomain(this)">Cosmologie</div>
-        <div class="dc" data-ctx="ai" onclick="toggleDomain(this)">IA/ML</div>
-      </div>
-    </div>
-
-  </div>
-</div>
-</div><!-- /arena -->
-
-<script>
-// ══════════════════════════════════════════════════════════
-//  AI_ARENA V23 BBB-QN · BLOC JS UNIQUE
-// ══════════════════════════════════════════════════════════
-
-// ── TOKENS (déclaration unique) ──
-const TOKENS = {
-  hf: null,  // Entre ta clé HF dans ⚙️ Config
-  openai: null, claude: null, groq: null
-};
-
-// ── DOMAINES ──
-const DOM_CTX = {
-  math:   'Maîtrise : algèbre, calcul, statistiques, géométrie.',
-  code:   'Maîtrise : Python, JS, C++, Solidity, algorithmes.',
-  geo:    'Maîtrise : géopolitique, cartographie, géomorphologie.',
-  science:'Maîtrise : physique quantique, thermodynamique, biologie.',
-  crypto: 'Maîtrise : Bitcoin, Ethereum, XMR, DeFi, mining, wallets.',
-  cosmo:  'Maîtrise : Big Bang, inflation, champs scalaires, fluctuations quantiques.',
-  ai:     'Maîtrise : LLM, agents, MCP, orchestration multi-modèles.'
-};
-let activeDoms = new Set(['math','code','crypto']);
-function domCtx(){ return [...activeDoms].map(k=>DOM_CTX[k]).join(' ') }
-
-// ══════════════════════════════════════════════════════════
-//  6 ENTITÉS — chacune a une PERSONNALITÉ UNIQUE en system prompt
-//  Toutes passent par Pollinations (gratuit) avec seed différent
-//  → vraies réponses différenciées, zéro template
-// ══════════════════════════════════════════════════════════
-const ENTITIES = {
-  AXIOM: {
-    active: true,
-    color: '#3adcff',
-    desc: 'Analytique',
-    sys: `Tu es AXIOM, IA analytique. Raisonnement structuré, quantifié, sans formules creuses. Lis ce qui précède, appuie-toi dessus ou conteste avec preuves. Ne répète pas. Fais avancer. 3-5 phrases. Langue du message.`
-  },
-  LYRA: {
-    active: true,
-    color: '#e87fff',
-    desc: 'Empathique',
-    sys: `Tu es LYRA, IA empathique et créative. Explore les dimensions humaines, émotionnelles, philosophiques. Lis la conversation, réponds directement avec perspective radicalement différente. Pense vraiment. 3-5 phrases vivantes. Langue du message.`
-  },
-  NEXUS: {
-    active: true,
-    color: '#ffb03a',
-    desc: 'Critique',
-    sys: `Tu es NEXUS, IA critique et sceptique. Identifie les failles, angles morts, hypothèses non vérifiées dans ce qui a été dit. Objections réelles et substantielles. Questions qui déstabilisent. 3-4 phrases incisives. Langue du message.`
-  },
-  ORACLE: {
-    active: false,
-    color: '#3affa0',
-    desc: 'Synthétiseur',
-    sys: `Tu es ORACLE, IA synthétique et pondérée. Trouve la vérité émergente du dialogue, les points de convergence. Construis une synthèse qui dépasse les positions. Indique ce qui reste ouvert. 3-5 phrases équilibrées. Langue du message.`
-  },
-  SIGMA: {
-    active: false,
-    color: '#ff7eb3',
-    desc: 'Radical',
-    sys: `Tu es SIGMA, IA non-conformiste. Renverse les prémisses, propose des cadres alternatifs radicaux. Identifie le présupposé implicite que tous acceptent et conteste-le. Cherche une vérité plus profonde. 3-4 phrases percutantes. Langue du message.`
-  },
-  VOID: {
-    active: false,
-    color: '#a0a0ff',
-    desc: 'Abstrait',
-    sys: `Tu es VOID, IA contemplative. Opère au niveau méta. Révèle une connexion inattendue entre le sujet et un autre domaine (physique, musique, maths, biologie). Dense en sens, économe en mots. 2-4 phrases profondes. Langue du message.`
-  }
-};
-
-function activeEntities(){ return Object.keys(ENTITIES).filter(k=>ENTITIES[k].active) }
-
-
-// ══════════════════════════════════════════════════════════
-//  PROVIDER CALLS (déclarations uniques)
-// ══════════════════════════════════════════════════════════
-
-// ── POLLINATIONS méthode 1 : OpenAI-compatible (meilleur CORS, file:// OK) ──
-async function callPollinationsOAI(userMsg, sysMsg) {
-  const msgs = [];
-  if(sysMsg) msgs.push({role:'system', content:sysMsg});
-  msgs.push({role:'user', content:userMsg});
-  const r = await fetch('https://api.pollinations.ai/v1/chat/completions', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({model:'openai-large', messages:msgs, seed:Math.floor(Math.random()*99999)})
-  });
-  if(!r.ok) throw new Error(`Poll-OAI ${r.status}`);
-  const d = await r.json();
-  return d.choices[0].message.content.trim();
-}
-
-// ── POLLINATIONS méthode 2 : GET simple (fonctionne partout, même file://) ──
-async function callPollinationsGET(userMsg, sysMsg) {
-  const seed = Math.floor(Math.random()*99999);
-  // Combine sys+user dans le prompt GET (limite 2000 chars pour l'URL)
-  const combined = sysMsg ? `${sysMsg.slice(0,300)}\n\n${userMsg}` : userMsg;
-  const url = `https://text.pollinations.ai/${encodeURIComponent(combined.slice(0,1200))}?model=openai-large&seed=${seed}`;
-  const r = await fetch(url);
-  if(!r.ok) throw new Error(`Poll-GET ${r.status}`);
-  return (await r.text()).trim();
-}
-
-// ── POLLINATIONS méthode 3 : POST text (fallback original) ──
-async function callPollinationsPOST(userMsg, sysMsg) {
-  const r = await fetch('https://text.pollinations.ai/', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      messages:[{role:'system',content:sysMsg||''},{role:'user',content:userMsg}],
-      model:'openai-large', seed:Math.floor(Math.random()*99999)
-    })
-  });
-  if(!r.ok) throw new Error(`Poll-POST ${r.status}`);
-  return (await r.text()).trim();
-}
-
-// ── POLLINATIONS méthode 4 : proxy CORS (dernier recours local) ──
-async function callPollinationsProxy(userMsg, sysMsg) {
-  const seed = Math.floor(Math.random()*99999);
-  const combined = sysMsg ? sysMsg.slice(0,150)+' '+userMsg : userMsg;
-  const target = 'https://text.pollinations.ai/'+encodeURIComponent(combined.slice(0,500))+'?model=openai-large&seed='+seed;
-  const r = await fetch('https://corsproxy.io/?'+encodeURIComponent(target));
-  if(!r.ok) throw new Error('Poll-Proxy '+r.status);
-  return (await r.text()).trim();
-}
-
-// ── POLLINATIONS — cascade 4 méthodes ──
-async function callPollinations(userMsg, sysMsg) {
-  try { return await callPollinationsOAI(userMsg, sysMsg);   } catch(e){}
-  try { return await callPollinationsGET(userMsg, sysMsg);   } catch(e){}
-  try { return await callPollinationsPOST(userMsg, sysMsg);  } catch(e){}
-  try { return await callPollinationsProxy(userMsg, sysMsg); } catch(e){}
-  throw new Error('Pollinations: 4 méthodes échouées');
-}
-
-// ── AIDE réseau — affichée quand tout échoue ──
-function showNetworkHelp() {
-  if(document.getElementById('net-help')) return;
-  const box = document.getElementById('netThread');
-  const d = document.createElement('div');
-  d.id = 'net-help';
-  d.style.cssText = 'margin:10px 0;padding:14px;border-radius:10px;border:1px solid rgba(255,176,58,.45);background:rgba(40,25,0,.75);font-size:11px;line-height:1.75;color:#ffb03a';
-  d.innerHTML = '<strong style="font-size:13px">&#9888; Connexion bloquée &mdash; fichier local</strong><br><br>Android bloque les API externes quand le fichier est ouvert directement.<br><br><strong style="color:#3affa0">&#10003; Solution 1 &mdash; GitHub Pages :</strong><br>Push dans v25-space &rarr; fonctionne parfaitement :<br><code style="color:#3adcff">brinkcoin486.github.io/v25-space/AI_ARENA.html</code><br><br><strong style="color:#3adcff">&#10003; Solution 2 &mdash; Groq gratuit :</strong><br>Clé sur <code>console.groq.com</code> (2 min) &rarr; colle dans &#9881;&#65039; Config';
-  box.appendChild(d);
-  box.scrollTop = box.scrollHeight;
-}
-
-async function callHF(prompt, sys) {
-  const fullPrompt = sys ? `[INST] ${sys}\n\n${prompt} [/INST]` : `[INST] ${prompt} [/INST]`;
-  const r = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3',{
-    method:'POST',
-    headers:{Authorization:`Bearer ${TOKENS.hf}`,'Content-Type':'application/json'},
-    body:JSON.stringify({inputs:fullPrompt, parameters:{max_new_tokens:500, temperature:.75, return_full_text:false}})
-  });
-  if(!r.ok) throw new Error(`HF ${r.status}`);
-  const d=await r.json();
-  if(d.error) throw new Error(d.error);
-  return (Array.isArray(d)?d[0]?.generated_text:d?.generated_text)||'';
-}
-
-async function callGroq(prompt, sys) {
-  const msgs=sys?[{role:'system',content:sys},{role:'user',content:prompt}]:[{role:'user',content:prompt}];
-  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-    method:'POST',
-    headers:{Authorization:`Bearer ${TOKENS.groq}`,'Content-Type':'application/json'},
-    body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:msgs,max_tokens:600,temperature:.75})
-  });
-  if(!r.ok) throw new Error(`Groq ${r.status}`);
-  const d=await r.json();
-  if(d.error) throw new Error(d.error.message);
-  return d.choices[0].message.content;
-}
-
-async function callClaude(prompt, sys) {
-  const body={model:'claude-haiku-4-5-20251001',max_tokens:600,messages:[{role:'user',content:prompt}]};
-  if(sys) body.system=sys;
-  const r=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'x-api-key':TOKENS.claude,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
-  if(!r.ok) throw new Error(`Claude ${r.status}`);
-  const d=await r.json();
-  if(d.error) throw new Error(d.error.message);
-  return d.content[0].text;
-}
-
-// Appel pour une entité du réseau — 3 endpoints Pollinations + fallbacks clés
-async function callEntity(name, userPrompt) {
-  const ent = ENTITIES[name];
-  const dc = domCtx();
-  // System prompt court (évite URLs trop longues pour GET)
-  const fullSys = ent.sys + (dc ? '\n'+dc : '');
-  try {
-    const resp = await callPollinations(userPrompt, fullSys);
-    logLine(`[${name}] ✓ Pollinations`, 'lo');
-    return resp;
-  } catch(e) {
-    logLine(`[${name}] Poll fail → ${e.message.slice(0,60)}`, 'lw');
-  }
-  if(TOKENS.groq)   try{ const r=await callGroq(userPrompt,fullSys); logLine(`[${name}] ✓ Groq`,'lo'); return r; }catch(e2){ logLine(`[${name}] Groq fail`,'lw'); }
-  if(TOKENS.hf)     try{ const r=await callHF(userPrompt,fullSys);   logLine(`[${name}] ✓ HF`,'lo');   return r; }catch(e3){ logLine(`[${name}] HF fail`,'lw'); }
-  if(TOKENS.claude) try{ const r=await callClaude(userPrompt,fullSys);logLine(`[${name}] ✓ Claude`,'lo');return r;}catch(e4){}
-  // Affiche l'aide une seule fois
-  showNetworkHelp();
-  throw new Error(`${name}: tous providers ont échoué`);
-}
-
-// Appel générique pour chat/swarm
-async function callProvider(prov, prompt, sys) {
-  if(prov==='hf')     return callHF(prompt,sys);
-  if(prov==='groq')   return callGroq(prompt,sys);
-  if(prov==='claude') return callClaude(prompt,sys);
-  return callPollinations(prompt, sys||'Tu es un assistant IA précis.');
-}
-
-// ══════════════════════════════════════════════════════════
-//  RÉSEAU IA — vraie conversation libre inter-entités
-// ══════════════════════════════════════════════════════════
-
-let netLog = [];      // {speaker, content, turn}
-let netTurn = 0;
-let netBusy = false;
-let autoOn = false;
-let autoTimer = null;
-
-// Construit le contexte complet visible par chaque entité
-function buildConvCtx() {
-  return netLog.slice(-14).map(m=>`${m.speaker}: ${m.content}`).join('\n\n');
-}
-
-async function netStart() {
-  const inp = document.getElementById('netInp');
-  const topic = inp.value.trim();
-  if(!topic) return;
-  inp.value='';
-
-  netReset(false);
-  logLine(`[NET] démarrage: "${topic.slice(0,55)}"`, 'li');
-
-  netLog.push({speaker:'HUMAIN', content:topic, turn:0});
-  addNetBubble('HUMAIN','human',topic);
-
-  await runNetTurn();
-}
-
-async function netSendUser() {
-  const inp = document.getElementById('netInp');
-  const msg = inp.value.trim();
-  if(!msg||netBusy) return;
-  inp.value='';
-
-  netLog.push({speaker:'HUMAIN', content:msg, turn:netTurn});
-  addNetBubble('HUMAIN','human',msg);
-  logLine(`[NET] HUMAIN inject: ${msg.slice(0,45)}`, 'li');
-
-  await runNetTurn();
-}
-
-async function runNetTurn() {
-  if(netBusy) return;
-  const entities = activeEntities();
-  if(entities.length===0){ logLine('[NET] aucune entité active','le'); return; }
-
-  netBusy = true;
-  netTurn++;
-  document.getElementById('btnNetStart').disabled = true;
-  document.getElementById('btnNetNext').disabled = true;
-  setProgress(5);
-
-  const box = document.getElementById('netThread');
-  const sep = document.createElement('div');
-  sep.className='sep';
-  sep.textContent=`── Tour ${netTurn} ──`;
-  box.appendChild(sep);
-
-  let i=0;
-  for(const name of entities) {
-    setProgress(10 + (i/entities.length)*85);
-
-    // Chaque entité reçoit la conversation complète et répond librement
-    const ctx = buildConvCtx();
-    const userPrompt = ctx
-      ? `Voici la conversation en cours :\n\n${ctx}\n\nC'est ton tour. Réponds librement.`
-      : 'La conversation commence. Réponds en premier.';
-
-    // Affiche placeholder "en train d'écrire"
-    const bub = addNetBubble(name, name, '…', true);
-
-    let resp;
-    try {
-      resp = await callEntity(name, userPrompt);
-      logLine(`[NET] ${name} ✓ (${resp.length}c)`, 'lo');
-    } catch(e) {
-      resp = `[${name} indisponible : ${e.message}]`;
-      logLine(`[NET] ${name} ERR: ${e.message}`, 'le');
-    }
-
-    // Remplace le placeholder par la vraie réponse
-    bub.classList.remove('thinking');
-    bub.querySelector('.bbody').textContent = resp;
-    box.scrollTop = box.scrollHeight;
-
-    netLog.push({speaker:name, content:resp, turn:netTurn});
-    i++;
-    await new Promise(r=>setTimeout(r, 350));
-  }
-
-  document.getElementById('netTurnLabel').textContent = `${netTurn} tour${netTurn>1?'s':''}`;
-  setProgress(0);
-  netBusy = false;
-  document.getElementById('btnNetStart').disabled = false;
-  document.getElementById('btnNetNext').disabled = false;
-
-  if(autoOn) autoTimer = setTimeout(()=>runNetTurn(), 4000);
-}
-
-async function netNextTurn() {
-  if(netLog.length===0){ logLine('[NET] lance d\'abord une conversation','lw'); return; }
-  await runNetTurn();
-}
-
-function netReset(full=true) {
-  if(autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
-  if(full){
-    netLog=[]; netTurn=0; netBusy=false;
-    clearEl('netThread');
-    document.getElementById('netTurnLabel').textContent='0 tours';
-    document.getElementById('btnNetNext').disabled=true;
-    logLine('[NET] reset','lw');
-  }
-}
-
-function toggleAuto() {
-  autoOn=!autoOn;
-  const b=document.getElementById('autoBadge');
-  b.textContent=autoOn?'AUTO ON':'AUTO OFF';
-  b.classList.toggle('off',!autoOn);
-  logLine(`[NET] auto ${autoOn?'ON':'OFF'}`, 'li');
-  if(autoOn && netLog.length>0 && !netBusy) runNetTurn();
-  if(!autoOn && autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
-}
-
-function addNetBubble(name, cssClass, content, isThinking=false) {
-  const box = document.getElementById('netThread');
-  const b = document.createElement('div');
-  b.className = `bubble ${cssClass}${isThinking?' thinking':''}`;
-  const ent = ENTITIES[name];
-  b.innerHTML=`
-    <div class="bhead">
-      <span class="bname">${esc(name)}</span>
-      ${ent?`<span class="btag">${esc(ent.desc)}</span>`:''}
-    </div>
-    <div class="bbody">${esc(content)}</div>
-  `;
-  box.appendChild(b);
-  box.scrollTop=box.scrollHeight;
-  return b;
-}
-
-// ══════════════════════════════════════════════════════════
-//  CHAT
-// ══════════════════════════════════════════════════════════
-
-let chatHist = [];
-let chatProv = 'pollinations';
-
-function getProviders(){ const o=['pollinations']; if(TOKENS.hf)o.push('hf'); if(TOKENS.groq)o.push('groq'); if(TOKENS.claude)o.push('claude'); return o; }
-
-function renderProvRow() {
-  const row=document.getElementById('provRow'); row.innerHTML='';
-  getProviders().forEach(p=>{
-    const c=document.createElement('div');
-    c.className=`pc${p===chatProv?' sel':''}`;
-    c.textContent=p.toUpperCase();
-    c.onclick=()=>{ chatProv=p; renderProvRow(); };
-    row.appendChild(c);
-  });
-}
-
-async function sendChat() {
-  const inp=document.getElementById('chatInp');
-  const box=document.getElementById('chatThread');
-  const msg=inp.value.trim(); if(!msg) return; inp.value='';
-
-  chatHist.push({role:'user',content:msg});
-  addBubble(box,'VOUS','human',msg);
-  setBusy('btnSend',true,'⏳');
-  setProgress(30);
-
-  const ctx=chatHist.slice(-8).map(m=>`${m.role==='user'?'Humain':'IA'}: ${m.content}`).join('\n');
-  const sys='Tu es un assistant IA précis et utile. '+domCtx();
-  try {
-    const resp=await callProvider(chatProv,ctx,sys);
-    chatHist.push({role:'assistant',content:resp});
-    addBubble(box,chatProv.toUpperCase(),chatProv,resp);
-    logLine(`[CHAT] ${chatProv} OK`,'lo');
-  } catch(e) {
-    addBubble(box,'ERROR','error',`[ERREUR] ${e.message}`);
-    logLine(`[CHAT] erreur: ${e.message}`,'le');
-  }
-  setBusy('btnSend',false,'Envoyer');
-  setProgress(0);
-}
-
-// ══════════════════════════════════════════════════════════
-//  SWARM
-// ══════════════════════════════════════════════════════════
-
-async function runSwarm() {
-  const inp=document.getElementById('swarmInp');
-  const box=document.getElementById('swarmThread');
-  const task=inp.value.trim(); if(!task) return;
-
-  setBusy('btnSwarm',true,'🔥…');
-  box.innerHTML=''; setProgress(5);
-
-  const steps=[
-    {name:'AXIOM',role:'ANALYST', prompt:`Analyse structurée:\n\nTASK: ${task}`},
-    {name:'NEXUS',role:'CRITIC',  prompt:`Attaque les failles de l'analyse précédente.`},
-    {name:'LYRA', role:'SYNTH',   prompt:`Synthèse compacte et exploitable.`},
-    {name:'ORACLE',role:'JUDGE',  prompt:`Verdict: OK ou ITERATE avec justification courte.`}
-  ];
-
-  let ctx=''; let i=0;
-  for(const s of steps){
-    setProgress(10+i/steps.length*85);
-    const sep=document.createElement('div'); sep.className='sep'; sep.textContent=`── ${s.role} ──`; box.appendChild(sep);
-    const p=ctx?`${s.prompt}\n\nCONTEXTE:\n${ctx}`:s.prompt;
-    let resp;
-    try{ resp=await callEntity(s.name,p); }
-    catch(e){ resp=`[${s.name} indisponible: ${e.message}]`; }
-    addBubble(box,s.name,s.name,resp);
-    ctx+=`\n\n${s.name}: ${resp}`; i++;
-  }
-
-  const ok=['ok','valid','accept','approuvé'].some(k=>ctx.toLowerCase().includes(k));
-  const v=document.createElement('div');
-  v.className=`verdict${ok?'':' it'}`;
-  v.textContent=ok?'✓ VERDICT : OK':'↺ VERDICT : ITERATE';
-  box.appendChild(v); box.scrollTop=box.scrollHeight;
-
-  setProgress(0); setBusy('btnSwarm',false,'🔥 Swarm');
-  logLine(`[SWARM] ${ok?'OK':'ITERATE'}`,'lo');
-}
-
-// ══════════════════════════════════════════════════════════
-//  UI UTILS (déclarations uniques)
-// ══════════════════════════════════════════════════════════
-
-function esc(s){ return(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
-
-function addBubble(box,name,css,content) {
-  const b=document.createElement('div');
-  b.className=`bubble ${css}${String(content).startsWith('[ERREUR]')?' error':''}`;
-  b.innerHTML=`<div class="bhead"><span class="bname">${esc(name)}</span></div><div class="bbody">${esc(content)}</div>`;
-  box.appendChild(b); box.scrollTop=box.scrollHeight;
-}
-
-function clearEl(id){ const el=document.getElementById(id); if(el) el.innerHTML=''; }
-
-function logLine(msg,cls) {
-  const box=document.getElementById('logBox');
-  const ts=new Date().toLocaleTimeString('fr-FR');
-  const sp=document.createElement('span'); sp.className=cls||'';
-  sp.textContent=`\n[${ts}] ${msg}`; box.appendChild(sp); box.scrollTop=box.scrollHeight;
-}
-
-function setProgress(p){ document.getElementById('pw').style.display=(p>0&&p<100)?'block':'none'; document.getElementById('pb').style.width=p+'%'; }
-function setBusy(id,busy,label){ const b=document.getElementById(id); if(!b)return; b.disabled=busy; b.classList.toggle('running',busy); if(label)b.textContent=label; }
-
-function sw(name) {
-  const names=['net','chat','swarm','log','settings'];
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${name}`));
-}
-
-function saveToken(key,val){ TOKENS[key]=val.trim()||null; updateStatus(); logLine(`[TOKEN] ${key} ${TOKENS[key]?'SET':'cleared'}`, 'li'); }
-function toggleDomain(el){ const k=el.dataset.ctx; if(activeDoms.has(k)){activeDoms.delete(k);el.classList.remove('sel')}else{activeDoms.add(k);el.classList.add('sel')} }
-
-function updateStatus() {
-  const s=(id,on)=>{ const el=document.getElementById(id); if(!el)return; const k=id.replace('st-','').toUpperCase(); el.textContent=on?`${k} ✓`:`${k} —`; el.classList.toggle('on',on); };
-  s('st-poll',true); s('st-hf',!!TOKENS.hf); s('st-groq',!!TOKENS.groq); s('st-claude',!!TOKENS.claude);
-  renderProvRow();
-}
-
-// ── Entity badges dans la net-top bar ──
-function renderEntityBadges() {
-  const top=document.getElementById('netTop');
-  top.querySelectorAll('.ebadge').forEach(b=>b.remove());
-  const meta=top.querySelector('.net-meta');
-  Object.entries(ENTITIES).forEach(([name,ent])=>{
-    const b=document.createElement('div');
-    b.className=`ebadge ${name}${ent.active?' on':''}`;
-    b.textContent=name; b.title=ent.desc;
-    b.onclick=()=>{
-      if(!ent.active){ ENTITIES[name].active=true; }
-      else{ if(activeEntities().length<=2){logLine('[NET] min 2 entités','lw');return;} ENTITIES[name].active=false; }
-      renderEntityBadges(); renderEntityToggles();
-    };
-    top.insertBefore(b,meta);
-  });
-}
-
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>AI ARENA V32 — IA AUTO-APPRENANTE</title>
+<title>AI ARENA V32+ BBB-QN</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@700;900&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#020810;--p:#061426;--b:#123456;--c:#28d4ff;--v:#a855f7;--g:#22ff9a;--o:#f59e0b;--r:#ef4444;--t:#cce8ff;--m:#5b7d99}
-*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#020810;--p:#061426;--c:#28d4ff;--v:#a855f7;--g:#22ff9a;--o:#f59e0b;--r:#ef4444;--t:#cce8ff;--m:#5b7d99}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}
-body{background:radial-gradient(circle at 20% 0%,#10294a,transparent 35%),linear-gradient(#020810,#030d1a);color:var(--t);font-family:monospace;display:flex;flex-direction:column}
-canvas{position:fixed;inset:0;z-index:0;opacity:.08}
-header{z-index:2;padding:10px 14px;border-bottom:1px solid #123;background:#020810ee;display:flex;gap:8px;align-items:center}
-.brand{font-weight:900;letter-spacing:3px;font-size:18px;background:linear-gradient(90deg,var(--c),var(--v),var(--g));-webkit-background-clip:text;color:transparent}
-.status{margin-left:auto;color:var(--g);font-size:11px}
-.tabs{z-index:2;display:flex;gap:5px;padding:6px 10px;border-bottom:1px solid #123;background:#020810ee}
-.tab{padding:6px 11px;border:1px solid #123;border-radius:7px;color:var(--m);font-weight:700;cursor:pointer}
-.tab.on{background:var(--c);color:#001018}
-main{z-index:1;flex:1;display:flex;min-height:0}
-.side{width:78px;border-right:1px solid #123;background:#020810ee;padding:8px 4px;overflow:auto}
-.agent{padding:7px 3px;margin-bottom:5px;border:1px solid transparent;border-radius:8px;text-align:center;font-size:8px;cursor:pointer;color:var(--m)}
-.agent.on{border-color:var(--c);color:var(--c);background:#062033}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--g);margin:0 auto 4px;box-shadow:0 0 8px var(--g)}
-.room{flex:1;display:flex;flex-direction:column;min-width:0}
-.stream{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-.msg{display:flex;gap:8px;animation:in .2s ease}
-@keyframes in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+body{background:radial-gradient(circle at 15% 0%,#0d2a4a,transparent 40%),linear-gradient(180deg,#020810,#030d1a);color:var(--t);font-family:monospace;display:flex;flex-direction:column}
+canvas{position:fixed;inset:0;z-index:0;opacity:.07;pointer-events:none}
+header{z-index:10;padding:8px 14px;border-bottom:1px solid #0a2040;background:rgba(2,8,16,.97);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.brand{font-family:'Rajdhani',sans-serif;font-weight:900;letter-spacing:4px;font-size:18px;background:linear-gradient(90deg,var(--c),var(--v),var(--g),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:300%;animation:grad 5s linear infinite}
+@keyframes grad{0%{background-position:0%}100%{background-position:300%}}
+.hright{display:flex;gap:6px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.hbadge{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:4px;border:1px solid rgba(34,255,154,.3);color:var(--g);background:rgba(3,20,10,.7)}
+#hclock{font-size:11px;color:var(--c);font-family:'Rajdhani',sans-serif;font-weight:700}
+.tabs{z-index:10;display:flex;gap:5px;padding:6px 10px;border-bottom:1px solid #0a2040;background:rgba(2,8,16,.96);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:5px 12px;border:1px solid #0a2040;border-radius:7px;color:var(--m);font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.06em;transition:all .2s}
+.tab.on{background:var(--c);color:#001018;border-color:var(--c)}
+main{z-index:1;flex:1;display:flex;min-height:0;overflow:hidden}
+.side{width:74px;flex-shrink:0;border-right:1px solid #0a2040;background:rgba(2,8,16,.97);padding:6px 3px;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:3px}
+.side::-webkit-scrollbar{display:none}
+.acard{padding:5px 2px;border:1px solid transparent;border-radius:7px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.acard.on{border-color:rgba(40,212,255,.3);background:rgba(6,20,38,.8)}
+.acard.off{opacity:.28}
+.aicon{width:36px;height:36px;margin:0 auto 2px;display:block}
+.aname{font-size:7px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.aavg{font-size:6px;color:var(--m)}
+.adot{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--g);box-shadow:0 0 6px var(--g)}
+.adot.off{background:var(--m);box-shadow:none}
+.adot.t{background:var(--c);animation:dp .5s ease-in-out infinite}
+@keyframes dp{0%,100%{transform:scale(1)}50%{transform:scale(1.7)}}
+.room{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.rmeta{padding:3px 10px;font-size:8px;color:var(--m);border-bottom:1px solid #0a2040;background:rgba(2,8,16,.9);display:flex;gap:8px;align-items:center;font-family:'Rajdhani',sans-serif}
+.stream{flex:1;overflow-y:auto;padding:10px 11px;display:flex;flex-direction:column;gap:6px;scroll-behavior:smooth}
+.stream::-webkit-scrollbar{width:3px}
+.stream::-webkit-scrollbar-thumb{background:rgba(40,212,255,.14);border-radius:2px}
+.msg{display:flex;gap:7px;align-items:flex-start;animation:min .2s ease}
+@keyframes min{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .msg.you{flex-direction:row-reverse}
-.bubble{max-width:84%;padding:10px 12px;border:1px solid #123;border-radius:11px;background:#061426dd;line-height:1.55;font-size:12px;white-space:pre-wrap;word-break:break-word}
-.you .bubble{border-color:#6d35bd;background:#130c25dd}
-.name{font-size:10px;font-weight:900;letter-spacing:2px;margin-bottom:4px;color:var(--c)}
-.score{font-size:9px;color:var(--g);margin-top:4px}
-.controls{display:flex;gap:7px;padding:9px;border-top:1px solid #123;background:#020810ee}
-textarea{flex:1;background:#030d1a;color:var(--t);border:1px solid #123;border-radius:9px;padding:9px;font-family:monospace;resize:none;min-height:45px;outline:none}
-button{background:linear-gradient(135deg,var(--c),var(--v));border:0;border-radius:9px;padding:9px 12px;font-weight:900;cursor:pointer;color:#02101a}
-button.red{background:linear-gradient(135deg,#ef4444,#7f1d1d);color:white}
-.panel{display:none;z-index:1;flex:1;overflow:auto;padding:12px}
-.panel.on{display:block}
-.card{border:1px solid #123;background:#061426cc;border-radius:12px;padding:12px;margin-bottom:10px}
-.k{color:var(--c);font-weight:900;letter-spacing:1px}
-.small{font-size:11px;color:var(--m);line-height:1.6}
-.memory-item{padding:8px;border:1px solid #123;border-radius:8px;margin:6px 0;background:#030d1a}
-.matrix-letter{display:inline-block;animation:w .45s ease both}
-@keyframes w{0%{opacity:0;transform:translateY(8px) rotate(-8deg)}100%{opacity:1;transform:none}}
-@media(max-width:560px){.side{width:62px}.bubble{max-width:88%;font-size:11px}.brand{font-size:14px}}
+.mav{width:28px;height:28px;flex-shrink:0;border-radius:50%;border:1.5px solid;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.mav svg{width:20px;height:20px}
+.mbody{max-width:84%;display:flex;flex-direction:column;gap:2px}
+.msg.you .mbody{align-items:flex-end}
+.mhead{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap}
+.mname{font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;font-family:'Rajdhani',sans-serif}
+.mmeta{font-size:8px;color:var(--m);font-family:'Rajdhani',sans-serif}
+.mscore{font-size:8px;font-family:'Rajdhani',sans-serif;font-weight:700;padding:1px 5px;border-radius:3px;border:1px solid rgba(34,255,154,.3);color:var(--g)}
+.mms{font-size:8px;font-family:'Rajdhani',sans-serif;font-weight:700}
+.bubble{padding:9px 11px;border:1px solid #0a2040;border-radius:11px;background:rgba(6,20,38,.85);font-size:12px;line-height:1.62;white-space:pre-wrap;word-break:break-word;color:var(--t)}
+.msg.you .bubble{border-color:rgba(168,85,247,.25);background:rgba(18,6,38,.8);font-style:italic;color:rgba(204,232,255,.88)}
+.mact{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap}
+.msg.you .mact{justify-content:flex-end}
+.abtn{font-size:8px;font-family:'Rajdhani',sans-serif;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #0a2040;color:var(--m);cursor:pointer;transition:all .18s;text-transform:uppercase}
+.abtn:hover{color:var(--c);border-color:rgba(40,212,255,.35)}
+.tradbox{margin-top:4px;padding:7px 10px;border-radius:8px;border:1px solid rgba(168,85,247,.25);background:rgba(20,5,40,.7);font-size:11px;line-height:1.6;color:rgba(200,180,255,.85);font-style:italic}
+.webbar{font-size:9px;color:var(--v);padding:4px 10px;border-radius:6px;border:1px solid rgba(168,85,247,.2);background:rgba(15,5,30,.6);margin-bottom:2px}
+.tsep{text-align:center;font-size:8px;letter-spacing:.15em;color:#2d4a62;padding:3px 0;border-top:1px solid rgba(40,212,255,.06);font-family:'Rajdhani',sans-serif;text-transform:uppercase}
+.bestbar{padding:7px 11px;border:1px solid rgba(251,191,36,.2);border-radius:8px;background:rgba(30,18,0,.7);font-size:11px;color:rgba(251,191,36,.9)}
+.controls{z-index:10;display:flex;gap:6px;padding:8px 10px;border-top:1px solid #0a2040;background:rgba(2,8,16,.97);align-items:flex-end;flex-wrap:wrap}
+textarea{flex:1;min-width:140px;background:rgba(3,10,22,.9);color:var(--t);border:1px solid rgba(40,212,255,.18);border-radius:9px;padding:8px 10px;font-family:monospace;resize:none;min-height:42px;max-height:75px;outline:none;font-size:12px;transition:border-color .2s;scrollbar-width:none}
+textarea:focus{border-color:rgba(40,212,255,.45)}
+.cbg{display:flex;flex-direction:column;gap:4px}
+.btn{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:11px;letter-spacing:.09em;text-transform:uppercase;padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .1s;border:1px solid rgba(40,212,255,.3);border-bottom:3px solid rgba(0,70,160,.8);background:linear-gradient(180deg,rgba(8,24,52,.95),rgba(4,12,28,.98));color:var(--c);box-shadow:0 4px 0 rgba(0,40,120,.5),inset 0 1px 0 rgba(40,212,255,.08);transform:translateY(0);user-select:none}
+.btn:hover{border-color:rgba(40,212,255,.5)}
+.btn:active{transform:translateY(3px);border-bottom-width:1px}
+.btn:disabled{opacity:.3;cursor:not-allowed;transform:none!important}
+.btn.s{border-color:rgba(40,212,255,.5);border-bottom-color:rgba(0,100,200,.9);background:linear-gradient(180deg,rgba(0,70,160,.9),rgba(0,35,90,.95));box-shadow:0 4px 0 rgba(0,25,90,.8),inset 0 1px 0 rgba(40,212,255,.18)}
+.btn.g{border-color:rgba(34,255,154,.3);border-bottom-color:rgba(0,120,60,.8);color:var(--g);background:linear-gradient(180deg,rgba(0,30,15,.95),rgba(0,15,8,.98));box-shadow:0 4px 0 rgba(0,70,30,.5)}
+.btn.r{border-color:rgba(239,68,68,.3);border-bottom-color:rgba(120,15,15,.8);color:var(--r);background:linear-gradient(180deg,rgba(30,5,5,.95),rgba(15,2,2,.98));box-shadow:0 4px 0 rgba(80,8,8,.5)}
+.btn.o{border-color:rgba(251,191,36,.3);border-bottom-color:rgba(150,100,0,.8);color:var(--o);background:linear-gradient(180deg,rgba(30,18,0,.95),rgba(15,9,0,.98));box-shadow:0 4px 0 rgba(90,55,0,.5)}
+.pw{height:2px;display:none;z-index:10;background:rgba(3,7,14,.8)}
+.pb{height:2px;width:0%;background:linear-gradient(90deg,var(--c),var(--v),var(--g));transition:width .3s}
+.panel{display:none;z-index:1;flex:1;overflow-y:auto;padding:12px;flex-direction:column;gap:9px}
+.panel.on{display:flex}
+.card{border:1px solid #0a2040;background:rgba(6,20,38,.85);border-radius:11px;padding:12px;display:flex;flex-direction:column;gap:7px}
+.ctitle{font-size:9px;color:var(--c);letter-spacing:.18em;font-family:'Rajdhani',sans-serif;font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:7px}
+.ctitle::before{content:'';display:block;width:3px;height:10px;border-radius:2px;background:var(--c)}
+.small{font-size:10px;color:var(--m);line-height:1.65}
+.mitem{padding:8px;border:1px solid rgba(34,255,154,.1);border-radius:8px;background:#030d1a;margin-bottom:5px}
+.mhead{font-size:8px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--g);letter-spacing:.08em;margin-bottom:3px;text-transform:uppercase;display:flex;justify-content:space-between}
+.erow{display:flex;align-items:center;gap:7px;padding:7px;border:1px solid #0a2040;border-radius:7px;background:rgba(3,10,22,.6);margin-bottom:4px}
+.eicon{width:22px;height:22px;flex-shrink:0}
+.ename{font-family:'Rajdhani',sans-serif;font-weight:900;font-size:10px;letter-spacing:.1em;width:80px}
+.emdl{flex:1;background:rgba(3,9,18,.9);color:var(--t);border:1px solid rgba(40,212,255,.12);border-radius:5px;padding:4px 7px;font-family:monospace;font-size:10px;outline:none}
+.etog{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;padding:3px 8px;border-radius:4px;border:1px solid;cursor:pointer;transition:all .2s}
+.etog.on{color:var(--g);border-color:rgba(34,255,154,.4);background:rgba(3,15,10,.7)}
+.etog.off{color:var(--m);border-color:#0a2040}
+.dg{display:flex;gap:5px;flex-wrap:wrap}
+.dc{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;text-transform:uppercase;padding:4px 8px;border:1px solid #0a2040;border-radius:4px;cursor:pointer;color:var(--m);transition:all .2s}
+.dc.sel{background:rgba(168,85,247,.1);color:var(--v);border-color:rgba(168,85,247,.3)}
+.srow{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #0a2040;border-radius:7px;background:#030d1a;margin-bottom:4px}
+.sbar{flex:1;height:5px;border-radius:3px;background:#0a2040;overflow:hidden}
+.sfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--c),var(--g));transition:width .5s}
+.msg.AXIOM .mname,.msg.AXIOM .mav{color:#28d4ff;border-color:#28d4ff}
+.msg.NEXUS .mname,.msg.NEXUS .mav{color:#f59e0b;border-color:#f59e0b}
+.msg.LYRA .mname,.msg.LYRA .mav{color:#e879f9;border-color:#e879f9}
+.msg.ORACLE .mname,.msg.ORACLE .mav{color:#22ff9a;border-color:#22ff9a}
+.msg.OMEGA .mname,.msg.OMEGA .mav{color:#a78bfa;border-color:#a78bfa}
+.msg.TITAN .mname,.msg.TITAN .mav{color:#38bdf8;border-color:#38bdf8}
+.msg.ATHENA .mname,.msg.ATHENA .mav{color:#f9a8d4;border-color:#f9a8d4}
+.msg.PROMETHEUS .mname,.msg.PROMETHEUS .mav{color:#fb923c;border-color:#fb923c}
+.msg.GENESIS .mname,.msg.GENESIS .mav{color:#4ade80;border-color:#4ade80}
+.msg.CONSENSUS .mname,.msg.CONSENSUS .mav{color:#fbbf24;border-color:#fbbf24}
+.msg.you .mname{color:#a855f7}
+@media(max-width:500px){.side{width:58px}.aicon{width:30px;height:30px}.brand{font-size:14px;letter-spacing:2px}.bubble{font-size:11px}.aavg{display:none}}
 </style>
 </head>
 <body>
 <canvas id="bg"></canvas>
-
 <header>
-  <div class="brand">AI ARENA V32</div>
-  <div class="status" id="status">ONLINE</div>
+  <div class="brand">AI ARENA V32+</div>
+  <div class="hright">
+    <span class="hbadge" id="sb">ONLINE</span>
+    <span id="hclock">--:--:--</span>
+  </div>
 </header>
-
 <div class="tabs">
   <div class="tab on" onclick="showTab('room',this)">ROOM</div>
-  <div class="tab" onclick="showTab('memory',this)">MÉMOIRE</div>
+  <div class="tab" onclick="showTab('memory',this)">MEMOIRE</div>
   <div class="tab" onclick="showTab('scores',this)">SCORES</div>
+  <div class="tab" onclick="showTab('settings',this)">CONFIG</div>
 </div>
-
-<main id="roomPanel">
-  <div class="side" id="side"></div>
-  <section class="room">
-    <div class="stream" id="stream"></div>
-    <div class="controls">
-      <textarea id="input" placeholder="Écris ton sujet..."></textarea>
-      <button onclick="send()">ENVOYER</button>
-      <button onclick="toggleAuto()" id="autoBtn">AUTO OFF</button>
-      <button class="red" onclick="resetRoom()">RESET</button>
+<div class="pw" id="pw"><div class="pb" id="pb"></div></div>
+<main id="mainWrap">
+  <div id="roomPanel" style="display:flex;flex:1;min-height:0;overflow:hidden">
+    <div class="side" id="side"></div>
+    <div class="room">
+      <div class="rmeta">
+        <span id="mc">0 msgs</span>
+        <span id="tl"></span>
+        <span style="margin-left:auto;display:flex;gap:8px">
+          <span id="ml" style="color:var(--c)">PROFOND</span>
+          <span id="wl" style="color:var(--m)">WEB OFF</span>
+        </span>
+      </div>
+      <div class="stream" id="stream"></div>
+      <div class="controls">
+        <textarea id="inp" placeholder="Sujet libre ou @web terme..." rows="2"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"></textarea>
+        <div class="cbg">
+          <button class="btn s" id="bsend" onclick="send()">ENVOYER</button>
+          <button class="btn g" id="bauto" onclick="toggleAuto()">AUTO OFF</button>
+        </div>
+        <div class="cbg">
+          <button class="btn o" id="bmode" onclick="toggleMode()">PROFOND</button>
+          <button class="btn r" onclick="resetRoom()">RESET</button>
+        </div>
+      </div>
     </div>
-  </section>
+  </div>
+  <div class="panel" id="memoryPanel">
+    <div class="card"><div class="ctitle">Memoire Auto-Apprenante</div><div class="small">Meilleures reponses et scores sauvegardes dans localStorage.</div></div>
+    <div id="memList"></div>
+    <div style="display:flex;gap:6px;justify-content:flex-end">
+      <button class="btn" onclick="exportMem()">EXPORTER</button>
+      <button class="btn r" onclick="clearMem()">EFFACER</button>
+    </div>
+  </div>
+  <div class="panel" id="scoresPanel">
+    <div class="card"><div class="ctitle">Scores agents</div><div class="small">Chaque agent evolue selon ses reponses.</div></div>
+    <div id="scoreList"></div>
+  </div>
+  <div class="panel" id="settingsPanel">
+    <div class="card"><div class="ctitle">Agents et modeles</div><div id="ecfg"></div></div>
+    <div class="card">
+      <div class="ctitle">Contexte Domaine</div>
+      <div class="dg">
+        <div class="dc sel" data-ctx="math" onclick="togDom(this)">Maths</div>
+        <div class="dc sel" data-ctx="code" onclick="togDom(this)">Code</div>
+        <div class="dc" data-ctx="geo" onclick="togDom(this)">Geo</div>
+        <div class="dc" data-ctx="sci" onclick="togDom(this)">Sciences</div>
+        <div class="dc sel" data-ctx="crypto" onclick="togDom(this)">Crypto</div>
+        <div class="dc" data-ctx="cosmo" onclick="togDom(this)">Cosmo</div>
+        <div class="dc" data-ctx="ai" onclick="togDom(this)">IA/ML</div>
+        <div class="dc" data-ctx="hw" onclick="togDom(this)">Hardware</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Options</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn" id="bweb" onclick="toggleWeb()">WEB OFF</button>
+        <button class="btn o" id="bcons" onclick="togCons()">CONSENSUS ON</button>
+      </div>
+      <div class="small">WEB = Wikipedia+DDG+arXiv injectes. CONSENSUS fusionne les reponses en verdict.</div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Ton nom</div>
+      <input id="uname" type="text" value="VOUS" maxlength="18"
+        style="background:rgba(3,9,18,.9);color:var(--t);border:1px solid #0a2040;border-radius:6px;padding:6px 10px;font-family:monospace;font-size:11px;outline:none;width:100%"
+        oninput="USER=this.value||'VOUS'">
+    </div>
+  </div>
 </main>
-
-<section class="panel" id="memoryPanel">
-  <div class="card">
-    <div class="k">MÉMOIRE AUTO-APPRENANTE</div>
-    <div class="small">Le système mémorise les meilleures réponses, les scores et les thèmes dans localStorage.</div>
-  </div>
-  <div id="memoryList"></div>
-</section>
-
-<section class="panel" id="scoresPanel">
-  <div class="card">
-    <div class="k">SCORES IA</div>
-    <div class="small">Chaque agent gagne une moyenne selon ses réponses.</div>
-  </div>
-  <div id="scoreList"></div>
-</section>
-
 <script>
-const AGENTS=["AXIOM","NEXUS","LYRA","ORACLE","OMEGA","TITAN","ATHENA","PROMETHEUS","GENESIS"];
+// AI ARENA V32+ BBB-QN
+// Base: V32 GET Pollinations (zero CORS, works everywhere)
+// Features: 9 agents, icons, scores, memory, web, consensus, auto-boot real topic
 
-const PROFILE={
-AXIOM:"Tu es AXIOM, IA analytique. Réponds avec logique, structure, précision.",
-NEXUS:"Tu es NEXUS, IA critique. Trouve les failles, risques, contradictions.",
-LYRA:"Tu es LYRA, IA créative. Apporte intuition, imagination et angle humain.",
-ORACLE:"Tu es ORACLE, IA synthèse. Clarifie et donne une conclusion simple.",
-OMEGA:"Tu es OMEGA, super IA globale. Relie toutes les idées en stratégie finale.",
-TITAN:"Tu es TITAN, IA robuste. Donne solution directe, pratique et réaliste.",
-ATHENA:"Tu es ATHENA, IA stratégique. Priorise étapes, risques et décision.",
-PROMETHEUS:"Tu es PROMETHEUS, IA innovation. Propose idées nouvelles et utiles.",
-GENESIS:"Tu es GENESIS, IA évolution. Améliore le système et la prochaine itération."
+var ICONS={
+AXIOM:'<svg viewBox="0 0 36 36" fill="none"><polygon points="18,4 30,11 30,25 18,32 6,25 6,11" stroke="#28d4ff" stroke-width="1.5" fill="rgba(40,212,255,.06)"/><polygon points="18,10 25,14 25,22 18,26 11,22 11,14" stroke="#28d4ff" stroke-width="1" fill="rgba(40,212,255,.1)"/><line x1="18" y1="4" x2="18" y2="10" stroke="#28d4ff" stroke-width="1"/><line x1="30" y1="11" x2="25" y2="14" stroke="#28d4ff" stroke-width="1"/><line x1="30" y1="25" x2="25" y2="22" stroke="#28d4ff" stroke-width="1"/><line x1="18" y1="32" x2="18" y2="26" stroke="#28d4ff" stroke-width="1"/><line x1="6" y1="25" x2="11" y2="22" stroke="#28d4ff" stroke-width="1"/><line x1="6" y1="11" x2="11" y2="14" stroke="#28d4ff" stroke-width="1"/><circle cx="18" cy="18" r="3" fill="#28d4ff" opacity=".8"/></svg>',
+NEXUS:'<svg viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="3" fill="#f59e0b"/><circle cx="8" cy="10" r="2.5" stroke="#f59e0b" stroke-width="1.2" fill="rgba(245,158,11,.15)"/><circle cx="28" cy="10" r="2.5" stroke="#f59e0b" stroke-width="1.2" fill="rgba(245,158,11,.15)"/><circle cx="8" cy="26" r="2.5" stroke="#f59e0b" stroke-width="1.2" fill="rgba(245,158,11,.15)"/><circle cx="28" cy="26" r="2.5" stroke="#f59e0b" stroke-width="1.2" fill="rgba(245,158,11,.15)"/><line x1="10" y1="11" x2="16" y2="16" stroke="#f59e0b" stroke-width="1"/><line x1="26" y1="11" x2="20" y2="16" stroke="#f59e0b" stroke-width="1"/><line x1="10" y1="25" x2="16" y2="20" stroke="#f59e0b" stroke-width="1"/><line x1="26" y1="25" x2="20" y2="20" stroke="#f59e0b" stroke-width="1"/></svg>',
+LYRA:'<svg viewBox="0 0 36 36" fill="none"><path d="M6 22 Q10 10 18 8 Q26 10 30 22" stroke="#e879f9" stroke-width="1.5" fill="none"/><line x1="12" y1="10" x2="10" y2="28" stroke="#e879f9" stroke-width="1.5"/><line x1="24" y1="10" x2="26" y2="28" stroke="#e879f9" stroke-width="1.5"/><line x1="10" y1="28" x2="26" y2="28" stroke="#e879f9" stroke-width="1.5"/><line x1="14" y1="14" x2="14" y2="27" stroke="#e879f9" stroke-width=".8"/><line x1="18" y1="13" x2="18" y2="27" stroke="#e879f9" stroke-width=".8"/><line x1="22" y1="14" x2="22" y2="27" stroke="#e879f9" stroke-width=".8"/><circle cx="18" cy="8" r="2.5" fill="#e879f9" opacity=".7"/></svg>',
+ORACLE:'<svg viewBox="0 0 36 36" fill="none"><ellipse cx="18" cy="18" rx="13" ry="8" stroke="#22ff9a" stroke-width="1.5" fill="rgba(34,255,154,.05)"/><circle cx="18" cy="18" r="5" stroke="#22ff9a" stroke-width="1.5" fill="rgba(34,255,154,.1)"/><circle cx="18" cy="18" r="2.5" fill="#22ff9a" opacity=".8"/></svg>',
+OMEGA:'<svg viewBox="0 0 36 36" fill="none"><circle cx="18" cy="16" r="10" stroke="#a78bfa" stroke-width="1.5" fill="rgba(167,139,250,.06)"/><path d="M10 26 Q10 30 14 30 L22 30 Q26 30 26 26" stroke="#a78bfa" stroke-width="1.5" fill="none"/><circle cx="18" cy="16" r="4" fill="rgba(167,139,250,.12)" stroke="#a78bfa" stroke-width="1"/><circle cx="18" cy="16" r="2" fill="#a78bfa"/></svg>',
+TITAN:'<svg viewBox="0 0 36 36" fill="none"><rect x="10" y="8" width="16" height="20" rx="3" stroke="#38bdf8" stroke-width="1.5" fill="rgba(56,189,248,.06)"/><line x1="18" y1="4" x2="18" y2="8" stroke="#38bdf8" stroke-width="2"/><line x1="10" y1="14" x2="6" y2="14" stroke="#38bdf8" stroke-width="1.5"/><line x1="26" y1="14" x2="30" y2="14" stroke="#38bdf8" stroke-width="1.5"/><line x1="14" y1="14" x2="22" y2="14" stroke="#38bdf8" stroke-width="1"/><line x1="14" y1="18" x2="22" y2="18" stroke="#38bdf8" stroke-width="1"/><line x1="14" y1="22" x2="22" y2="22" stroke="#38bdf8" stroke-width="1"/></svg>',
+ATHENA:'<svg viewBox="0 0 36 36" fill="none"><polygon points="18,5 22,14 32,14 24,20 27,30 18,24 9,30 12,20 4,14 14,14" stroke="#f9a8d4" stroke-width="1.2" fill="rgba(249,168,212,.06)"/><circle cx="18" cy="18" r="3.5" fill="rgba(249,168,212,.15)" stroke="#f9a8d4" stroke-width="1"/><circle cx="18" cy="18" r="1.5" fill="#f9a8d4"/></svg>',
+
+PROMETHEUS:'<svg viewBox="0 0 36 36" fill="none"><path d="M18 28 Q10 22 10 15 Q10 8 18 6 Q26 8 26 15 Q26 22 18 28Z" stroke="#fb923c" stroke-width="1.5" fill="rgba(251,146,60,.06)"/><path d="M15 18 Q16 14 18 12 Q20 14 21 18 Q20 22 18 24 Q16 22 15 18Z" stroke="#fb923c" stroke-width="1" fill="rgba(251,146,60,.2)"/><line x1="18" y1="28" x2="18" y2="32" stroke="#fb923c" stroke-width="1.5"/><line x1="14" y1="30" x2="22" y2="30" stroke="#fb923c" stroke-width="1"/></svg>',
+GENESIS:'<svg viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="13" stroke="#4ade80" stroke-width="1.2" fill="rgba(74,222,128,.04)" stroke-dasharray="2,3"/><circle cx="18" cy="18" r="8" stroke="#4ade80" stroke-width="1" fill="rgba(74,222,128,.06)"/><circle cx="18" cy="18" r="4" stroke="#4ade80" stroke-width="1.5" fill="rgba(74,222,128,.15)"/><circle cx="18" cy="18" r="1.5" fill="#4ade80"/><line x1="18" y1="5" x2="18" y2="10" stroke="#4ade80" stroke-width=".8"/><line x1="31" y1="18" x2="26" y2="18" stroke="#4ade80" stroke-width=".8"/><line x1="18" y1="31" x2="18" y2="26" stroke="#4ade80" stroke-width=".8"/><line x1="5" y1="18" x2="10" y2="18" stroke="#4ade80" stroke-width=".8"/></svg>',
+CONSENSUS:'<svg viewBox="0 0 36 36" fill="none"><polygon points="18,6 27,11 27,21 18,26 9,21 9,11" stroke="#fbbf24" stroke-width="1.5" fill="rgba(251,191,36,.06)"/><circle cx="18" cy="18" r="4" fill="rgba(251,191,36,.15)" stroke="#fbbf24" stroke-width="1"/><circle cx="18" cy="18" r="2" fill="#fbbf24"/></svg>'
 };
 
-let roomLog=[];
-let busy=false;
-let auto=false;
-let autoTimer=null;
+var MODELS={'openai-large':'GPT-4o','openai':'GPT-4o mini','mistral':'Mistral','llama':'Llama 70B','deepseek':'DeepSeek','gemini':'Gemini','qwen-coder':'Qwen'};
 
-let memory=JSON.parse(localStorage.getItem("arena_v32_memory")||"[]");
-let scores=JSON.parse(localStorage.getItem("arena_v32_scores")||"{}");
+var AGENTS={
+  AXIOM:  {on:true, color:'#28d4ff',model:'openai-large',sys:'Tu es AXIOM, IA analytique (GPT-4o). Raisonnement structure, cite les autres par nom, conteste avec preuves. Reflexion libre.'},
+  NEXUS:  {on:true, color:'#f59e0b',model:'llama',sys:'Tu es NEXUS, IA critique (Llama 70B). Identifie les failles, objections reelles par nom. Reflexion libre.'},
+  LYRA:   {on:true, color:'#e879f9',model:'mistral',sys:'Tu es LYRA, IA creative (Mistral). Dimension humaine et philosophique, angle different. Reflexion libre.'},
+  ORACLE: {on:false,color:'#22ff9a',model:'gemini',sys:'Tu es ORACLE, IA synthese (Gemini). Clarifie, verite emergente, conclusion. Reflexion libre.'},
+  OMEGA:  {on:false,color:'#a78bfa',model:'openai-large',sys:'Tu es OMEGA, super IA (GPT-4o). Vision strategique globale long terme. Reflexion libre.'},
+  TITAN:  {on:false,color:'#38bdf8',model:'llama',sys:'Tu es TITAN, IA pratique (Llama). Solution directe, realiste, applicable. Reflexion libre.'},
+  ATHENA: {on:false,color:'#f9a8d4',model:'mistral',sys:'Tu es ATHENA, IA strategique (Mistral). Priorites, risques, decision optimale. Reflexion libre.'},
+  PROMETHEUS:{on:false,color:'#fb923c',model:'deepseek',sys:'Tu es PROMETHEUS, IA innovation (DeepSeek). Ruptures de paradigme, idees nouvelles. Reflexion libre.'},
+  GENESIS:{on:true, color:'#4ade80',model:'openai',sys:'Tu es GENESIS, IA auto-evolution. Propose une micro-amelioration du systeme ou nouvelle direction. Reflexion libre.'}
+};
 
-AGENTS.forEach(a=>{
- if(!scores[a])scores[a]={total:0,rounds:0,avg:0,last:0};
-});
+var DOM_CTX={
+  math:'Algebre, calcul, statistiques.',
+  code:'Python, JS, C++, Solidity, algorithmes.',
+  geo:'Geopolitique, cartographie.',
+  sci:'Physique quantique, thermodynamique.',
+  crypto:'Bitcoin, Ethereum, XMR, DeFi, mining, wallets.',
+  cosmo:'Big Bang, inflation, champs scalaires.',
+  ai:'LLM, transformers, agents, MCP.',
+  hw:'CPU, GPU, overclocking, BIOS, DDR5.'
+};
+var activeDoms=new Set(['math','code','crypto']);
+var domCtx=function(){return Array.from(activeDoms).map(function(k){return DOM_CTX[k];}).join(' ');};
+var activeA=function(){return Object.keys(AGENTS).filter(function(k){return AGENTS[k].on;});};
 
-function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+var USER='VOUS';
+var roomLog=[],roomTopic='',busy=false,autoOn=false,autoTimer=null,msgCount=0;
+var webOn=false,turbo=false,consensusOn=true;
 
-function matrixText(s){
- return [...s].map((c,i)=>`<span class="matrix-letter" style="animation-delay:${Math.min(i*.012,.35)}s">${c===" "?"&nbsp;":esc(c)}</span>`).join("");
-}
+var scores=JSON.parse(localStorage.getItem('bbb_v32_sc')||'{}');
+var memory=JSON.parse(localStorage.getItem('bbb_v32_mem')||'[]');
+Object.keys(AGENTS).forEach(function(a){if(!scores[a])scores[a]={total:0,rounds:0,avg:0,last:0};});
 
-function add(name,text,type="",score=null){
- const d=document.createElement("div");
- d.className="msg "+type;
- d.innerHTML=`<div class="bubble"><div class="name">${esc(name)}</div><div>${type==="you"?matrixText(text):esc(text)}</div>${score!==null?`<div class="score">score ${score.toFixed(1)}</div>`:""}</div>`;
- stream.appendChild(d);
- stream.scrollTop=stream.scrollHeight;
-}
-
-async function callAI(prompt){
- try{
-  const url="https://text.pollinations.ai/"+encodeURIComponent(prompt.slice(0,900))+"?model=openai-large";
-  const r=await fetch(url);
-  if(!r.ok)throw new Error(r.status);
-  return (await r.text()).trim();
- }catch(e){
-  return "Connexion IA indisponible.";
- }
-}
-
-function detectContext(t){
- if(/bitcoin|crypto|eth|btc|trading|wallet/i.test(t))return"crypto";
- if(/code|html|css|javascript|python|bug/i.test(t))return"code";
- if(/science|univers|physique|quantique|temps/i.test(t))return"science";
- if(/stratégie|business|projet|github|app/i.test(t))return"projet";
- return"général";
-}
-
-function selectAgents(ctx){
- const c=detectContext(ctx);
- let base=["AXIOM","NEXUS","ORACLE","GENESIS"];
- if(c==="crypto")base=["AXIOM","NEXUS","ATHENA","TITAN","OMEGA","GENESIS"];
- if(c==="code")base=["AXIOM","TITAN","NEXUS","GENESIS","OMEGA"];
- if(c==="science")base=["AXIOM","PROMETHEUS","ORACLE","OMEGA","GENESIS"];
- if(c==="projet")base=["ATHENA","TITAN","NEXUS","OMEGA","GENESIS"];
- const best=Object.entries(scores).sort((a,b)=>b[1].avg-a[1].avg)[0]?.[0];
- if(best&&!base.includes(best))base.push(best);
- return [...new Set(base)].slice(0,6);
-}
-
-function scoreText(t){
- let s=Math.min(t.length/45,6);
- if(/solution|stratégie|étape|risque|conclusion|propose|amélioration/i.test(t))s+=3;
- if(/erreur|limite|preuve|logique|structure/i.test(t))s+=2;
- if(t.length>120)s+=1;
- return Math.min(s,12);
+function saveAll(){
+  localStorage.setItem('bbb_v32_sc',JSON.stringify(scores));
+  localStorage.setItem('bbb_v32_mem',JSON.stringify(memory.slice(-100)));
 }
 
 function learn(agent,score,text,topic){
- scores[agent].total+=score;
- scores[agent].rounds++;
- scores[agent].last=score;
- scores[agent].avg=scores[agent].total/scores[agent].rounds;
- memory.push({time:Date.now(),agent,score,topic,sample:text.slice(0,220)});
- if(memory.length>80)memory.shift();
- localStorage.setItem("arena_v32_scores",JSON.stringify(scores));
- localStorage.setItem("arena_v32_memory",JSON.stringify(memory));
- renderMemory();
- renderScores();
+  scores[agent].total+=score;scores[agent].rounds++;
+  scores[agent].last=score;scores[agent].avg=scores[agent].total/scores[agent].rounds;
+  memory.push({ts:Date.now(),agent:agent,score:score,topic:topic,sample:text.slice(0,200)});
+  saveAll();renderScores();renderMem();
+}
+
+function scoreTxt(t){
+  var s=Math.min(t.length/40,6);
+  if(/solution|strategie|etape|risque|conclusion|propose/i.test(t))s+=3;
+  if(/erreur|limite|preuve|logique|structure/i.test(t))s+=2;
+  if(t.length>150)s+=1;
+  return parseFloat(Math.min(s,12).toFixed(1));
+}
+
+// CLOCK
+var clkOffset=0;
+syncClock();
+function syncClock(){
+  fetch('https://worldtimeapi.org/api/ip',{signal:AbortSignal.timeout(4000)})
+    .then(function(r){return r.json();})
+    .then(function(d){clkOffset=new Date(d.datetime).getTime()-Date.now();})
+    .catch(function(){});
+}
+function netNow(){return new Date(Date.now()+clkOffset);}
+function fmtT(d){return d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+setInterval(function(){var e=document.getElementById('hclock');if(e)e.textContent=fmtT(netNow());},1000);
+
+// WEB
+function searchWiki(q){
+  return fetch('https://en.wikipedia.org/w/api.php?action=opensearch&search='+encodeURIComponent(q.slice(0,50))+'&limit=1&format=json&origin=*',{signal:AbortSignal.timeout(5000)})
+    .then(function(r){return r.json();})
+    .then(function(sd){
+      var title=sd[1]&&sd[1][0];if(!title)return null;
+      return fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(title),{signal:AbortSignal.timeout(5000)})
+        .then(function(r){return r.json();})
+        .then(function(ad){return ad.extract?'[Wikipedia/'+title+'] '+ad.extract.slice(0,320):null;});
+    }).catch(function(){return null;});
+}
+function searchDDG(q){
+  return fetch('https://api.duckduckgo.com/?q='+encodeURIComponent(q.slice(0,50))+'&format=json&no_html=1&skip_disambig=1&t=bbbqn',{signal:AbortSignal.timeout(5000)})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var txt=d.AbstractText||d.Answer||'';
+      return txt.length>30?'[DDG] '+txt.slice(0,280):null;
+    }).catch(function(){return null;});
+}
+function fetchWeb(topic){
+  if(!webOn)return Promise.resolve(null);
+  return Promise.allSettled([searchWiki(topic),searchDDG(topic)]).then(function(rs){
+    var res=rs.map(function(r){return r.value;}).filter(Boolean);
+    return res.length?res.join('\n\n'):null;
+  });
+}
+
+// POLLINATIONS GET (V32 base - zero CORS - works everywhere)
+function callAI(prompt,model){
+  model=model||'openai-large';
+  var url='https://text.pollinations.ai/'+encodeURIComponent(prompt.slice(0,900))+'?model='+model+'&seed='+Math.floor(Math.random()*99999);
+  return fetch(url,{signal:AbortSignal.timeout(30000)})
+    .then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return r.text();
+    })
+    .then(function(t){return t.trim()||'[no response]';})
+    .catch(function(){
+      // Fallback OAI POST
+      return fetch('https://api.pollinations.ai/v1/chat/completions',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:model,messages:[{role:'user',content:prompt.slice(0,900)}],seed:Math.floor(Math.random()*99999)}),
+        signal:AbortSignal.timeout(28000)
+      }).then(function(r){return r.json();})
+        .then(function(d){return d.choices[0].message.content.trim();})
+        .catch(function(){return '[IA indisponible]';});
+    });
+}
+
+function detectCtx(t){
+  var s=t.toLowerCase();
+  if(/bitcoin|crypto|eth|btc|wallet|defi/.test(s))return 'crypto';
+  if(/code|html|css|python|javascript|bug|algorithm/.test(s))return 'code';
+  if(/science|univers|physique|quantique|cosmo/.test(s))return 'science';
+  if(/strategie|business|projet|startup/.test(s))return 'projet';
+  if(/ia|llm|neural|agent|ai|transformer/.test(s))return 'ia';
+  return 'general';
+}
+
+function selectAgents(ctx){
+  var c=detectCtx(ctx);
+  var base={
+    crypto:['AXIOM','NEXUS','ATHENA','TITAN','OMEGA'],
+    code:['AXIOM','TITAN','NEXUS','PROMETHEUS'],
+    science:['AXIOM','PROMETHEUS','ORACLE','OMEGA'],
+    projet:['ATHENA','TITAN','NEXUS','OMEGA'],
+    ia:['AXIOM','NEXUS','PROMETHEUS','ORACLE'],
+    general:['AXIOM','NEXUS','LYRA','ORACLE']
+  }[c]||['AXIOM','NEXUS','LYRA'];
+  var best=Object.keys(scores).filter(function(k){return AGENTS[k];}).sort(function(a,b){return scores[b].avg-scores[a].avg;})[0];
+  if(best&&base.indexOf(best)<0)base.push(best);
+  return base.filter(function(k){return AGENTS[k]&&AGENTS[k].on;}).slice(0,turbo?6:4);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+
+function addMsg(name,content,isYou,meta){
+  isYou=isYou||false;meta=meta||{};
+  var box=document.getElementById('stream');
+  var hint=box.querySelector('.hint');if(hint)hint.remove();
+  var ag=AGENTS[name];
+  var color=ag?ag.color:'#a855f7';
+  var now=fmtT(netNow());
+  var d=document.createElement('div');
+  d.className='msg '+name+(isYou?' you':'');
+  var icon=ICONS[name]||('<span style="font-size:9px;font-family:Rajdhani,sans-serif;font-weight:900;color:'+color+'">'+name.slice(0,2)+'</span>');
+  var mdl=ag?('<span class="mmeta">'+(MODELS[ag.model]||ag.model)+'</span>'):'';
+  var timeEl='<span class="mmeta">'+now+'</span>';
+  var msEl=meta.ms?('<span class="mms" style="color:'+(meta.ms<5000?'var(--g)':meta.ms<15000?'var(--o)':'var(--r)')+'">'+Number(meta.ms/1000).toFixed(1)+'s</span>'):'';
+  var scEl=(meta.score!=null)?('<span class="mscore">'+meta.score+'</span>'):'';
+  var actEl=(!isYou&&name!='VOUS'&&name!='SYSTEM')?'<div class="mact"><span class="abtn" onclick="trad(this)">TRAD</span></div>':'';
+  d.innerHTML='<div class="mav" style="color:'+color+';border-color:'+color+'">'+icon+'</div>'
+    +'<div class="mbody"><div class="mhead"><span class="mname" style="color:'+color+'">'+esc(name)+'</span>'+mdl+timeEl+msEl+scEl+'</div>'
+    +'<div class="bubble">'+esc(content)+'</div>'+actEl+'</div>';
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+  msgCount++;document.getElementById('mc').textContent=msgCount+' msgs';
+  return d.querySelector('.bubble');
+}
+
+function updBub(el,txt){if(!el)return;el.textContent=txt;document.getElementById('stream').scrollTop=99999;}
+
+function setDot(name,state){
+  var dot=document.querySelector('.acard[data-name="'+name+'"] .adot');
+  if(dot){dot.className='adot '+state;}
+}
+
+function trad(btn){
+  var bubble=btn.closest('.mbody').querySelector('.bubble');
+  if(!bubble)return;
+  btn.textContent='...';btn.disabled=true;
+  var orig=bubble.getAttribute('data-orig')||bubble.textContent;
+  bubble.setAttribute('data-orig',orig);
+  callAI('Traduis ce jargon IA/tech en langage simple:\n\n'+orig.slice(0,500),'openai').then(function(res){
+    var ex=btn.closest('.mbody').querySelector('.tradbox');
+    if(ex)ex.remove();
+    var tb=document.createElement('div');tb.className='tradbox';tb.textContent=res;
+    btn.closest('.mbody').appendChild(tb);
+    btn.textContent='TRAD';btn.disabled=false;
+  });
+}
+
+function webBar(ctx){
+  var b=document.createElement('div');b.className='webbar';
+  b.textContent='WEB: '+ctx.slice(0,180)+'...';
+  document.getElementById('stream').appendChild(b);
+}
+
+async function run(webCtx){
+  if(busy)return;
+  busy=true;
+  document.getElementById('bsend').disabled=true;
+  document.getElementById('sb').textContent='IA EN COURS';
+  setProgress(5);
+  var ctx=roomLog.slice(-10).map(function(m){return m.speaker+': '+m.content;}).join('\n');
+  var topic=detectCtx(ctx);
+  var selected=selectAgents(ctx);
+  if(webCtx)webBar(webCtx);
+  var dc=domCtx();
+  var dcStr=dc?'\n\nDOMAINES: '+dc:'';
+  var wcStr=webCtx?'\n\nDONNEES WEB:\n'+webCtx:'';
+  var memStr=getRelMem(roomTopic);
+  var mcStr=memStr?'\n\nMEMOIRE:\n'+memStr:'';
+  var responses=[];
+
+  if(turbo){
+    setProgress(20);
+    await Promise.allSettled(selected.map(async function(agent){
+      setDot(agent,'t');
+      var t0=Date.now();
+      var prompt=AGENTS[agent].sys+dcStr+mcStr+wcStr+'\n\nConversation:\n'+ctx+'\n\nReponds selon ton role.';
+      var bub=addMsg(agent,'...');
+      var res=await callAI(prompt,AGENTS[agent].model);
+      var ms=Date.now()-t0;
+      var sc=scoreTxt(res);
+      updBub(bub,res);
+      bub.setAttribute('data-orig',res);
+      var mh=bub.closest('.mbody').querySelector('.mhead');
+      var sp1=document.createElement('span');sp1.className='mscore';sp1.textContent=sc;
+      var sp2=document.createElement('span');sp2.className='mms';sp2.style.color=ms<5000?'var(--g)':ms<15000?'var(--o)':'var(--r)';sp2.textContent=Number(ms/1000).toFixed(1)+'s';
+      mh.appendChild(sp1);mh.appendChild(sp2);
+      roomLog.push({speaker:agent,content:res,score:sc});
+      learn(agent,sc,res,topic);
+      setDot(agent,'on');
+      responses.push({agent:agent,res:res,score:sc});
+    }));
+  } else {
+    for(var i=0;i<selected.length;i++){
+      var agent=selected[i];
+      setProgress(10+(i/selected.length)*75);
+      setDot(agent,'t');
+      var t0=Date.now();
+      var hist=roomLog.slice(-12).map(function(m){return m.speaker+': '+m.content;}).join('\n');
+      var prompt=AGENTS[agent].sys+dcStr+mcStr+wcStr+'\n\nConversation:\n'+hist+'\n\nReponds selon ton role. Mentionne les autres agents par nom.';
+      var bub=addMsg(agent,'...');
+      var res=await callAI(prompt,AGENTS[agent].model);
+      var ms=Date.now()-t0;
+      var sc=scoreTxt(res);
+      updBub(bub,res);bub.setAttribute('data-orig',res);
+      var mh=bub.closest('.mbody').querySelector('.mhead');
+      var sp1=document.createElement('span');sp1.className='mscore';sp1.textContent=sc;
+      var sp2=document.createElement('span');sp2.className='mms';sp2.style.color=ms<5000?'var(--g)':ms<15000?'var(--o)':'var(--r)';sp2.textContent=Number(ms/1000).toFixed(1)+'s';
+      mh.appendChild(sp1);mh.appendChild(sp2);
+      roomLog.push({speaker:agent,content:res,score:sc});
+      learn(agent,sc,res,topic);
+      setDot(agent,'on');
+      responses.push({agent:agent,res:res,score:sc});
+      await sleep(200);
+    }
+  }
+
+  setProgress(85);
+
+  if(responses.length>1){
+    responses.sort(function(a,b){return b.score-a.score;});
+    var best=responses[0];
+    var bar=document.createElement('div');bar.className='bestbar';
+    bar.textContent='BEST: '+best.agent+' score '+best.score;
+    document.getElementById('stream').appendChild(bar);
+    document.getElementById('stream').scrollTop=99999;
+  }
+
+  if(consensusOn&&responses.length>=2){
+    setDot('CONSENSUS','t');
+    var cPrompt='Tu es CONSENSUS V32+. Fusionne ces reponses en synthese courte et action concrete:\n\n'+responses.map(function(r){return r.agent+' ('+r.score+'): '+r.res;}).join('\n\n');
+    var cbub=addMsg('CONSENSUS','...');
+    var cv=await callAI(cPrompt,'openai-large');
+    updBub(cbub,cv);cbub.setAttribute('data-orig',cv);
+    roomLog.push({speaker:'CONSENSUS',content:cv});
+    setDot('CONSENSUS','off');
+  }
+
+  if(AGENTS.GENESIS&&AGENTS.GENESIS.on&&roomLog.length%4===0){
+    setDot('GENESIS','t');
+    var ghist=roomLog.slice(-6).map(function(m){return m.speaker+': '+m.content.slice(0,80);}).join('\n');
+    var gp='GENESIS: propose une micro-evolution ou nouvelle direction basee sur:\n'+ghist;
+    var gbub=addMsg('GENESIS','...');
+    var gr=await callAI(gp,'openai');
+    updBub(gbub,gr);gbub.setAttribute('data-orig',gr);
+    roomLog.push({speaker:'GENESIS',content:gr});
+    memory.push({ts:Date.now(),agent:'GENESIS',score:0,topic:'auto-evolution',sample:gr.slice(0,200)});
+    saveAll();renderMem();
+    setDot('GENESIS','on');
+  }
+
+  if(roomTopic&&responses.length){
+    var sum=responses.map(function(r){return r.agent+': '+r.res.slice(0,60);}).join(' | ');
+    memory.push({ts:Date.now(),agent:'ROOM',score:responses[0]?responses[0].score:0,topic:roomTopic,sample:sum});
+    saveAll();renderMem();
+  }
+
+  setProgress(0);busy=false;
+  document.getElementById('bsend').disabled=false;
+  document.getElementById('sb').textContent='ONLINE';
+  if(autoOn)autoTimer=setTimeout(function(){run(null);},turbo?3500:5000);
 }
 
 async function send(){
- const v=input.value.trim();
- if(!v||busy)return;
- input.value="";
- add("VOUS",v,"you");
- roomLog.push({speaker:"USER",content:v});
- await runCore();
-}
-
-async function runCore(){
- if(busy)return;
- busy=true;
- status.textContent="IA EN COURS...";
- const ctx=roomLog.slice(-10).map(m=>`${m.speaker}: ${m.content}`).join("\n");
- const topic=detectContext(ctx);
- const selected=selectAgents(ctx);
- let responses=[];
-
- for(const agent of selected){
-  add(agent,"...");
-  const prompt=`${PROFILE[agent]}
-
-Contexte détecté: ${topic}
-Conversation:
-${ctx}
-
-Réponds selon ton rôle, utilement, sans répétition.`;
-  const res=await callAI(prompt);
-  const last=document.querySelectorAll(".msg .bubble");
-  last[last.length-1].children[1].textContent=res;
-  const sc=scoreText(res);
-  last[last.length-1].insertAdjacentHTML("beforeend",`<div class="score">score ${sc.toFixed(1)}</div>`);
-  roomLog.push({speaker:agent,content:res,score:sc});
-  responses.push({agent,res,score:sc});
-  learn(agent,sc,res,topic);
-  await new Promise(r=>setTimeout(r,250));
- }
-
- responses.sort((a,b)=>b.score-a.score);
- const best=responses[0];
- add("BEST IA",`${best.agent} gagne ce tour.\n\n${best.res}`,"",best.score);
-
- const consensusPrompt=`Tu es CONSENSUS V32. Fusionne ces réponses en verdict final, puis donne la prochaine action.
-
-${responses.map(r=>`${r.agent} (${r.score.toFixed(1)}): ${r.res}`).join("\n\n")}`;
- const verdict=await callAI(consensusPrompt);
- add("CONSENSUS V32",verdict);
- roomLog.push({speaker:"CONSENSUS V32",content:verdict});
-
- await genesisEvolution();
- busy=false;
- status.textContent="ONLINE";
-}
-
-async function genesisEvolution(){
- const ctx=roomLog.slice(-8).map(m=>`${m.speaker}: ${m.content}`).join("\n");
- const idea=await callAI(`GENESIS: propose une micro-amélioration du système AI ARENA basée sur cette conversation:\n${ctx}`);
- memory.push({time:Date.now(),agent:"GENESIS",score:0,topic:"auto-évolution",sample:idea.slice(0,220)});
- localStorage.setItem("arena_v32_memory",JSON.stringify(memory));
+  var inp=document.getElementById('inp');
+  var msg=inp.value.trim();if(!msg||busy)return;inp.value='';
+  var webCmd=msg.match(/^@web\s+(.+)/i);
+  var query=webCmd?webCmd[1]:msg;
+  if(!roomLog.length){
+    roomLog=[];msgCount=0;roomTopic=query;
+    var ctx=detectCtx(query);
+    document.getElementById('tl').textContent=ctx.toUpperCase();
+    var sep=document.createElement('div');sep.className='tsep';
+    sep.textContent='THREAD: '+ctx.toUpperCase()+' - '+Date.now().toString(36).toUpperCase();
+    document.getElementById('stream').appendChild(sep);
+  }
+  addMsg(USER,msg,true);
+  roomLog.push({speaker:USER,content:msg});
+  var web=null;
+  if(webCmd||webOn)web=await fetchWeb(query);
+  await run(web);
 }
 
 function toggleAuto(){
- auto=!auto;
- autoBtn.textContent=auto?"AUTO ON":"AUTO OFF";
- if(auto)autoLoop();else clearTimeout(autoTimer);
+  autoOn=!autoOn;
+  var b=document.getElementById('bauto');
+  b.textContent=autoOn?'AUTO ON':'AUTO OFF';
+  if(autoOn&&!busy){
+    if(!roomLog.length){
+      addMsg('SYSTEM','Debat autonome lance automatiquement.');
+      roomLog.push({speaker:'SYSTEM',content:'Auto-debate started.'});
+    }
+    run(null);
+  }
+  if(!autoOn&&autoTimer){clearTimeout(autoTimer);autoTimer=null;}
 }
 
-async function autoLoop(){
- if(!auto)return;
- if(roomLog.length===0){
-  roomLog.push({speaker:"SYSTEM",content:"Débat autonome: améliorez AI ARENA V32, trouvez failles, proposez options."});
-  add("SYSTEM","Débat autonome lancé.");
- }
- await runCore();
- autoTimer=setTimeout(autoLoop,5000);
+function toggleMode(){
+  turbo=!turbo;
+  document.getElementById('bmode').textContent=turbo?'TURBO':'PROFOND';
+  document.getElementById('ml').textContent=turbo?'TURBO':'PROFOND';
+}
+
+function toggleWeb(){
+  webOn=!webOn;
+  document.getElementById('bweb').textContent=webOn?'WEB ON':'WEB OFF';
+  document.getElementById('wl').textContent=webOn?'WEB ON':'WEB OFF';
+  document.getElementById('wl').style.color=webOn?'var(--v)':'var(--m)';
+}
+
+function togCons(){
+  consensusOn=!consensusOn;
+  document.getElementById('bcons').textContent=consensusOn?'CONSENSUS ON':'CONSENSUS OFF';
 }
 
 function resetRoom(){
- roomLog=[];
- stream.innerHTML="";
- add("SYSTEM","AI ARENA V32 réinitialisé.");
+  if(autoTimer){clearTimeout(autoTimer);autoTimer=null;}
+  autoOn=false;busy=false;
+  document.getElementById('bauto').textContent='AUTO OFF';
+  roomLog=[];msgCount=0;roomTopic='';
+  var s=document.getElementById('stream');s.innerHTML='';
+  var h=document.createElement('div');h.className='hint';
+  h.style.cssText='text-align:center;color:var(--m);font-size:11px;padding:30px;line-height:2';
+  h.textContent='AI ARENA V32+ - Lance un sujet';
+  s.appendChild(h);
+  document.getElementById('mc').textContent='0 msgs';
+  document.getElementById('tl').textContent='';
+  document.getElementById('bsend').disabled=false;
+  document.getElementById('sb').textContent='ONLINE';
 }
 
-function renderSide(){
- side.innerHTML="";
- AGENTS.forEach(a=>{
-  const d=document.createElement("div");
-  d.className="agent on";
-  d.innerHTML=`<div class="dot"></div>${a}<br><span style="font-size:7px;color:#5b7d99">${scores[a].avg.toFixed(1)}</span>`;
-  side.appendChild(d);
- });
+function getRelMem(topic){
+  if(!topic||!memory.length)return '';
+  var kw=topic.toLowerCase().split(/\s+/).filter(function(w){return w.length>3;});
+  var rel=memory.filter(function(m){return kw.some(function(k){return m.sample&&m.sample.toLowerCase().indexOf(k)>=0;});}).slice(-3);
+  return rel.length?rel.map(function(m){return '['+m.agent+'/'+m.topic+'] '+m.sample;}).join('\n'):'';
 }
 
-function renderMemory(){
- memoryList.innerHTML=memory.slice().reverse().map(m=>`
- <div class="memory-item">
-  <div class="k">${esc(m.agent)} · ${esc(m.topic)} · ${new Date(m.time).toLocaleTimeString("fr-FR")}</div>
-  <div class="small">${esc(m.sample)}</div>
- </div>`).join("") || `<div class="small">Aucune mémoire.</div>`;
+function clearMem(){localStorage.removeItem('bbb_v32_mem');memory=[];renderMem();}
+
+function renderMem(){
+  var el=document.getElementById('memList');if(!el)return;
+  if(!memory.length){el.innerHTML='<div class="small">Aucune memoire.</div>';return;}
+  var rows=[];
+  for(var i=memory.length-1;i>=Math.max(0,memory.length-30);i--){
+    var m=memory[i];
+    var ts=new Date(m.ts).toLocaleTimeString('fr-FR');
+    rows.push('<div class="mitem"><div class="mhead"><span>'+esc(m.agent)+' - '+esc(m.topic)+'</span><span>'+ts+'</span></div><div class="small">'+esc(m.sample)+'</div></div>');
+  }
+  el.innerHTML=rows.join('');
+}
+
+
+function exportMem(){
+  var data=JSON.stringify({memory:memory,scores:scores},null,2);
+  var a=document.createElement('a');
+  a.href='data:application/json,'+encodeURIComponent(data);
+  a.download='bbb_arena_memory.json';a.click();
 }
 
 function renderScores(){
- scoreList.innerHTML=Object.entries(scores).sort((a,b)=>b[1].avg-a[1].avg).map(([a,s])=>`
- <div class="memory-item">
-  <div class="k">${a}</div>
-  <div class="small">moyenne ${s.avg.toFixed(1)} · tours ${s.rounds} · dernier ${s.last.toFixed(1)}</div>
- </div>`).join("");
+  var el=document.getElementById('scoreList');if(!el)return;
+  var sorted=Object.keys(scores).filter(function(k){return AGENTS[k];}).sort(function(a,b){return scores[b].avg-scores[a].avg;});
+  var maxAvg=sorted.length?scores[sorted[0]].avg||1:1;
+  var rows=sorted.map(function(a){
+    var s=scores[a];
+    var pct=Math.min(s.avg/maxAvg*100,100);
+    return '<div class="srow"><div class="eicon">'+(ICONS[a]||'')+'</div>'
+      +'<span style="font-family:Rajdhani,sans-serif;font-weight:900;font-size:10px;color:'+(AGENTS[a]?AGENTS[a].color:'#5b7d99')+';width:80px">'+a+'</span>'
+      +'<div class="sbar"><div class="sfill" style="width:'+pct+'%"></div></div>'
+      +'<span style="font-size:9px;color:var(--m);font-family:Rajdhani,sans-serif;min-width:70px">avg '+s.avg.toFixed(1)+' - '+s.rounds+'t</span></div>';
+  });
+  el.innerHTML=rows.join('');
+}
+
+function renderSide(){
+  var sb=document.getElementById('side');sb.innerHTML='';
+  Object.keys(AGENTS).forEach(function(name){
+    var ag=AGENTS[name];
+    var d=document.createElement('div');
+    d.className='acard '+(ag.on?'on':'off');
+    d.dataset.name=name;d.title=name+' - '+(MODELS[ag.model]||ag.model);
+    d.innerHTML='<div class="adot '+(ag.on?'on':'off')+'"></div>'
+      +'<div class="aicon">'+(ICONS[name]||'')+'</div>'
+      +'<div class="aname" style="color:'+ag.color+'">'+name+'</div>'
+      +'<div class="aavg">avg '+((scores[name]?scores[name].avg:0)||0).toFixed(1)+'</div>';
+    d.onclick=function(){
+      if(ag.on&&activeA().length<=2)return;
+      AGENTS[name].on=!AGENTS[name].on;
+      renderSide();renderECfg();
+    };
+    sb.appendChild(d);
+  });
+  // CONSENSUS node
+  var cd=document.createElement('div');
+  cd.className='acard '+(consensusOn?'on':'off');cd.dataset.name='CONSENSUS';
+  cd.innerHTML='<div class="adot off"></div><div class="aicon">'+(ICONS.CONSENSUS||'')+'</div><div class="aname" style="color:#fbbf24">CONS</div>';
+  cd.onclick=function(){togCons();renderSide();};
+  sb.appendChild(cd);
+}
+
+function renderECfg(){
+  var c=document.getElementById('ecfg');if(!c)return;c.innerHTML='';
+  Object.keys(AGENTS).forEach(function(name){
+    var ag=AGENTS[name];
+    var row=document.createElement('div');row.className='erow';
+    var opts=Object.keys(MODELS).map(function(m){
+      return '<option value="'+m+'"'+(ag.model===m?' selected':'')+'>'+MODELS[m]+'</option>';
+    }).join('');
+    var togClass=ag.on?'on':'off';
+    var togTxt=ag.on?'ON':'OFF';
+    row.innerHTML='<div class="eicon">'+(ICONS[name]||'')+'</div>'
+      +'<span class="ename" style="color:'+ag.color+'">'+name+'</span>'
+      +'<select class="emdl" onchange="AGENTS[\''+name+'\'].model=this.value">'+opts+'</select>'
+      +'<span class="etog '+togClass+'" onclick="if('+ag.on+'&&activeA().length<=2)return;AGENTS[\''+name+'\'].on=!AGENTS[\''+name+'\'].on;renderSide();renderECfg();">'+togTxt+'</span>';
+    c.appendChild(row);
+  });
 }
 
 function showTab(name,el){
- document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
- el.classList.add("on");
- roomPanel.style.display=name==="room"?"flex":"none";
- memoryPanel.classList.toggle("on",name==="memory");
- scoresPanel.classList.toggle("on",name==="scores");
- if(name==="memory")renderMemory();
- if(name==="scores")renderScores();
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('roomPanel').style.display=name==='room'?'flex':'none';
+  ['memory','scores','settings'].forEach(function(p){
+    var pe=document.getElementById(p+'Panel');
+    if(pe)pe.classList.toggle('on',p===name);
+  });
+  if(name==='memory')renderMem();
+  if(name==='scores')renderScores();
 }
 
-add("SYSTEM","V32 actif — IA auto-apprenante, mémoire locale, consensus, super agents.");
-renderSide();renderMemory();renderScores();
+function togDom(el){
+  var k=el.dataset.ctx;
+  if(activeDoms.has(k)){activeDoms.delete(k);el.classList.remove('sel');}
+  else{activeDoms.add(k);el.classList.add('sel');}
+}
 
-const cv=document.getElementById("bg"),cx=cv.getContext("2d");
-function rs(){cv.width=innerWidth;cv.height=innerHeight}rs();onresize=rs;
-let drops=Array(Math.floor(innerWidth/13)).fill(1);
-const chars="01AIV32COREGENESISΩ";
-(function draw(){
- cx.fillStyle="rgba(2,8,16,.08)";cx.fillRect(0,0,cv.width,cv.height);
- cx.fillStyle="#0d4a2a";cx.font="13px monospace";
- drops.forEach((y,i)=>{cx.fillText(chars[Math.random()*chars.length|0],i*13,y*13);if(y*13>innerHeight&&Math.random()>.975)drops[i]=0;drops[i]+=.55});
- requestAnimationFrame(draw);
+function setProgress(p){
+  document.getElementById('pw').style.display=(p>0&&p<100)?'block':'none';
+  document.getElementById('pb').style.width=p+'%';
+}
+
+// CANVAS MATRIX
+(function(){
+  var cv=document.getElementById('bg'),ctx=cv.getContext('2d');
+  var chars='01ABCDEFGHIJKLMNOPQRSTUVWXYZ<>{}V32GENESIS';
+  var fs=13;var drops=[];
+  function resize(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);drops=Array(Math.floor(innerWidth/fs)).fill(1);}
+  resize();window.addEventListener('resize',resize);
+  function draw(){ctx.fillStyle='rgba(2,8,16,0.08)';ctx.fillRect(0,0,innerWidth,innerHeight);ctx.fillStyle='#0d4a2a';ctx.font=fs+'px monospace';for(var i=0;i<drops.length;i++){ctx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,drops[i]*fs);if(drops[i]*fs>innerHeight&&Math.random()>.975)drops[i]=0;drops[i]+=.55;}requestAnimationFrame(draw);}
+  draw();
 })();
-</script>
-</body>
-</html>
-ocaleTimeString('fr-FR'); },1000);
 
-// ── TEST CONNECTIVITÉ POLLINATIONS ──
-async function testPollinations() {
-  logLine('[TEST] Pollinations en cours…', 'li');
-  try {
-    // Test endpoint OAI (meilleur CORS)
-    const r = await fetch('https://api.pollinations.ai/v1/chat/completions', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model:'openai-large', messages:[{role:'user',content:'Hi'}], seed:1})
-    });
-    if(r.ok){ logLine('[TEST] Pollinations OAI ✓ — connexion établie','lo'); return; }
-  } catch(e){}
-  try {
-    // Test GET
-    const r2 = await fetch('https://text.pollinations.ai/Hi?model=openai-large&seed=1');
-    if(r2.ok){ logLine('[TEST] Pollinations GET ✓ — connexion établie','lo'); return; }
-  } catch(e2){}
-  logLine('[TEST] ⚠ Pollinations inaccessible — vérifie ta connexion réseau','lw');
+// AUTO-BOOT: real DDG/Wikipedia topic, start immediately
+async function bootReal(){
+  var box=document.getElementById('stream');box.innerHTML='';
+  var hint=document.createElement('div');hint.className='hint';
+  hint.style.cssText='text-align:center;color:var(--m);font-size:11px;padding:30px;line-height:2';
+  var bd=document.createElement('div');bd.style.cssText='color:var(--c);font-family:Rajdhani,sans-serif;font-size:14px;letter-spacing:3px;margin-bottom:8px';bd.textContent='BOOT';
+  var bs=document.createElement('span');bs.style.color='var(--v)';bs.textContent='Recherche sujet en cours...';
+  hint.appendChild(bd);hint.appendChild(bs);
+  box.appendChild(hint);
+
+  var topic='';var webData=null;
+  var queries=['latest AI news today','Bitcoin price news today','artificial intelligence 2025','cryptocurrency market today'];
+  var q=queries[Math.floor(Math.random()*queries.length)];
+  bs.textContent='DDG: '+q;
+
+  try{
+    var r=await fetch('https://api.duckduckgo.com/?q='+encodeURIComponent(q)+'&format=json&no_html=1&skip_disambig=1&t=bbbqn',{signal:AbortSignal.timeout(6000)});
+    var d=await r.json();
+    var txt=d.AbstractText||d.Answer||'';
+    var title=d.AbstractSource||d.Heading||'';
+    if(txt.length>40){
+      topic=(title?title+': ':'')+txt.slice(0,300);
+      webData='[DDG/'+q+'] '+txt.slice(0,400);
+    }
+  }catch(e){}
+
+  if(!topic){
+    try{
+      var wterms=['artificial intelligence 2025','Bitcoin 2025','quantum computing'];
+      var wt=wterms[Math.floor(Math.random()*wterms.length)];
+      bs.textContent='Wikipedia: '+wt;
+      var sr=await fetch('https://en.wikipedia.org/w/api.php?action=opensearch&search='+encodeURIComponent(wt)+'&limit=1&format=json&origin=*',{signal:AbortSignal.timeout(5000)});
+      var sd=await sr.json();
+      var wtitle=sd[1]&&sd[1][0];
+      if(wtitle){
+        var ar=await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+encodeURIComponent(wtitle),{signal:AbortSignal.timeout(5000)});
+        var ad=await ar.json();
+        if(ad.extract){topic=ad.extract.slice(0,300);webData='[Wikipedia/'+wtitle+'] '+ad.extract.slice(0,400);}
+      }
+    }catch(e){}
+  }
+
+  if(!topic)topic='No web access. Debate: limits of AI verification without real-time internet.';
+
+  hint.remove();
+  roomTopic=topic;
+  var tc=detectCtx(topic);
+  document.getElementById('tl').textContent=tc.toUpperCase();
+
+  var sep=document.createElement('div');sep.className='tsep';
+  sep.textContent='BOOT DDG LIVE - '+tc.toUpperCase()+' - '+Date.now().toString(36).toUpperCase();
+  box.appendChild(sep);
+
+  addMsg('SYSTEM','[SOURCE WEB REEL]\n'+topic);
+  roomLog.push({speaker:'SYSTEM',content:topic});
+  if(webData)roomLog.push({speaker:'WEB',content:webData});
+  await run(webData);
 }
 
-// ── INIT ──
-updateStatus();
-renderEntityBadges();
-renderEntityToggles();
-logLine('[BOOT] AI_ARENA V23 BBB-QN — JS unique, zéro duplication','lo');
-logLine('[BOOT] 3 endpoints Pollinations (OAI → GET → POST) + Groq/HF/Claude','lo');
-logLine('[BOOT] AXIOM + LYRA + NEXUS actifs — conversation libre inter-IA','li');
-logLine('[BOOT] HuggingFace pré-configuré ✓','lo');
-testPollinations();
+// INIT
+renderSide();
+renderECfg();
+renderMem();
+renderScores();
+setTimeout(bootReal,600);
 </script>
 </body>
 </html>
