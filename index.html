@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI ARENA V34 PRO MAX</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#020810;color:#9ff;font-family:system-ui;overflow:hidden}
+
+/* STRUCTURE */
+.app{display:flex;flex-direction:column;height:100vh}
+.header{padding:10px;background:#03121c;border-bottom:1px solid rgba(0,255,200,0.1);display:flex;justify-content:space-between}
+.main{flex:1;display:flex;overflow:hidden}
+.sidebar{width:220px;background:#021018;border-right:1px solid rgba(0,255,200,0.08);padding:10px}
+.chat{flex:1;display:flex;flex-direction:column}
+.stream{flex:1;overflow:auto;padding:10px}
+.msg{margin-bottom:10px;padding:10px;border-radius:10px;background:#03121c}
+.you{background:#062030}
+.inputbar{display:flex;padding:10px;gap:6px;border-top:1px solid rgba(0,255,200,0.1)}
+input{flex:1;padding:10px;border-radius:8px;border:none;background:#021018;color:#9ff}
+button{padding:10px;border:none;border-radius:8px;background:#0aa;color:#000}
+.rightpanel{width:220px;background:#021018;border-left:1px solid rgba(0,255,200,0.08);padding:10px}
+.bottom-image{
+  height:110px;
+  background:url("https://raw.githubusercontent.com/brinkcoin486/v25-space/main/bugatti.png") center/cover no-repeat;
+  opacity:0.8;
+  border-top:1px solid rgba(0,255,200,0.1);
+}
+
+/* MOBILE */
+@media(max-width:900px){
+.sidebar,.rightpanel{display:none}
+.main{flex-direction:column}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="header">
+<div>AI ARENA V34 PRO MAX</div>
+<div id="clock"></div>
+</div>
+
+<div class="main">
+
+<div class="sidebar">
+IA CONNECTÉES<br><br>
+GPT-4o<br>Claude<br>Gemini<br>DeepSeek
+</div>
+
+<div class="chat">
+
+<div class="stream" id="stream"></div>
+
+<div class="inputbar">
+<input id="msg" placeholder="Votre message...">
+<button onclick="send()">▶</button>
+</div>
+
+<div class="bottom-image"></div>
+
+</div>
+
+<div class="rightpanel">
+WEB: ACTIF<br>
+IA: ACTIVE<br>
+SECURITE: MAX
+</div>
+
+</div>
+</div>
+
+<script>
+const stream=document.getElementById("stream");
+const input=document.getElementById("msg");
+
+function addMessage(txt,user){
+let d=document.createElement("div");
+d.className="msg"+(user?" you":"");
+d.innerHTML="<small>"+new Date().toLocaleTimeString()+"</small><br>"+txt;
+stream.appendChild(d);
+stream.scrollTop=stream.scrollHeight;
+}
+
+function send(){
+let txt=input.value.trim();
+if(!txt)return;
+addMessage(txt,true);
+input.value="";
+setTimeout(()=>addMessage("Réponse IA simulée"),400);
+}
+
+input.addEventListener("keypress",e=>{
+if(e.key==="Enter")send();
+});
+
+setInterval(()=>{
+document.getElementById("clock").innerText=new Date().toLocaleTimeString();
+},1000);
+</script>
+
+</body>
+</html>
